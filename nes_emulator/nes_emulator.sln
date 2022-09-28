@@ -5,7 +5,7 @@ VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nes_emulator", "nes_emulator.vcxproj", "{644AA379-F5E6-4232-A3E1-A0829EC1FC1F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nes_emulator_tests", "..\nes_emulator_tests\nes_emulator_tests.vcxproj", "{6628601A-D424-43B9-AEEE-7E592A9584DD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nes_emulator_tests", "..\nes_emulator_tests\nes_emulator_tests.vcxproj", "{EA294BAA-7995-47B6-BA7E-930616485794}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,14 +23,14 @@ Global
 		{644AA379-F5E6-4232-A3E1-A0829EC1FC1F}.Release|x64.Build.0 = Release|x64
 		{644AA379-F5E6-4232-A3E1-A0829EC1FC1F}.Release|x86.ActiveCfg = Release|Win32
 		{644AA379-F5E6-4232-A3E1-A0829EC1FC1F}.Release|x86.Build.0 = Release|Win32
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Debug|x64.ActiveCfg = Debug|x64
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Debug|x64.Build.0 = Debug|x64
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Debug|x86.ActiveCfg = Debug|Win32
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Debug|x86.Build.0 = Debug|Win32
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Release|x64.ActiveCfg = Release|x64
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Release|x64.Build.0 = Release|x64
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Release|x86.ActiveCfg = Release|Win32
-		{6628601A-D424-43B9-AEEE-7E592A9584DD}.Release|x86.Build.0 = Release|Win32
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Debug|x64.ActiveCfg = Debug|x64
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Debug|x64.Build.0 = Debug|x64
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Debug|x86.ActiveCfg = Debug|Win32
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Debug|x86.Build.0 = Debug|Win32
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Release|x64.ActiveCfg = Release|x64
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Release|x64.Build.0 = Release|x64
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Release|x86.ActiveCfg = Release|Win32
+		{EA294BAA-7995-47B6-BA7E-930616485794}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
