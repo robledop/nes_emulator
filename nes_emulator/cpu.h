@@ -6,6 +6,22 @@
 
 typedef unsigned char byte;
 typedef  unsigned short word;
+typedef enum address_mode
+{
+	implicit,
+	accumulator,
+	immediate,
+	zero_page,
+	zero_page_x,
+	zero_page_y,
+	relative,
+	absolute,
+	absolute_x,
+	absolute_y,
+	indirect,
+	indexed_indirect,
+	indirect_indexed
+} address_mode;
 
 typedef struct
 {
@@ -41,6 +57,11 @@ typedef struct
 	memory memory;
 } cpu;
 
+#define OP(opcode, operation, address_mode) \
+case 0x##opcode: \
+	##operation(cpu, ##address_mode); \
+	break;
+
 void cpu_exec(cpu* cpu, byte instruction);
 void cpu_clear_memory(cpu* cpu);
 void cpu_init(cpu* cpu);
@@ -60,3 +81,10 @@ void cpu_set_D_flag(cpu* cpu, const char val);
 void cpu_set_B_flag(cpu* cpu, const char val);
 void cpu_set_V_flag(cpu* cpu, const char val);
 void cpu_set_N_flag(cpu* cpu, const char val);
+
+
+// opcodes
+
+void lda(cpu* cpu, address_mode address_mode);
+void ldx(cpu* cpu, const address_mode address_mode);
+void ldy(cpu* cpu, const address_mode address_mode);
