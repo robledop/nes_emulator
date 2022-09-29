@@ -23,6 +23,8 @@ void cpu_exec(cpu* cpu, const byte instruction)
 {
 	switch (instruction)
 	{
+		// https://www.nesdev.org/obelisk-6502-guide/reference.html#LDA
+
 		// LDA immediate
 		// LDA #10         ;Load 10 ($0A) into the accumulator
 		// https://www.nesdev.org/obelisk-6502-guide/addressing.html#IMM
@@ -69,21 +71,72 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		break;
 
 		// LDA Absolute,X
+		// LDA $3000,X     ;Load accumulator  $3000 + X
+		// https://www.nesdev.org/obelisk-6502-guide/addressing.html#ABX
 		case 0xBD:
-			break;
+		{
+			cpu->PC++;
+			const byte low_byte = cpu->memory.data[cpu->PC];
+			cpu->PC++;
+			const byte high_byte = cpu->memory.data[cpu->PC];
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->X;
+			cpu->A = cpu->memory.data[address];
+			handle_lda_flags(cpu);
+		}
+		break;
 
-			// LDA Absolute,Y
+		// LDA Absolute,Y
+		// LDA $3000,Y     ;Load accumulator  $3000 + Y
+		// https://www.nesdev.org/obelisk-6502-guide/addressing.html#ABY
 		case 0xB9:
-			break;
+		{
+			cpu->PC++;
+			const byte low_byte = cpu->memory.data[cpu->PC];
+			cpu->PC++;
+			const byte high_byte = cpu->memory.data[cpu->PC];
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->Y;
+			cpu->A = cpu->memory.data[address];
+			handle_lda_flags(cpu);
+		}
+		break;
 
-			// LDA (Indirect,X)
+		// LDA (Indirect,X)
+		// LDA ($40,X)     ;Load a byte indirectly from memory
+		// https://www.c64-wiki.com/wiki/Indexed-indirect_addressing
 		case 0xA1:
+		{
+			cpu->PC++;
+			const byte vector = cpu->memory.data[cpu->PC] + cpu->X;
 
-			break;
+			const byte low_byte = cpu->memory.data[vector];
+			const byte high_byte = cpu->memory.data[vector + 1];
+			const word address = ((word)(high_byte << 8)) | low_byte;
+			cpu->A = cpu->memory.data[address];
+			handle_lda_flags(cpu);
+		}
+		break;
 
-			// LDA (Indirect),Y
+		// LDA (Indirect),Y
+		//	LDA ($40),Y     ;Load a byte indirectly from memory
+		// https://www.c64-wiki.com/wiki/Indirect-indexed_addressing
 		case 0xB1:
-			break;
+		{
+			// TODO: check if the PC is supposed to be incremented more than once
+			cpu->PC++;
+			const byte vector = cpu->memory.data[cpu->PC];
+
+			const byte low_byte = cpu->memory.data[vector];
+			const byte high_byte = cpu->memory.data[vector + 1];
+
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->Y;
+
+			cpu->A = cpu->memory.data[address];
+			handle_lda_flags(cpu);
+		}
+		break;
 
 		default:
 			printf("%s", "Unsupported opcode");

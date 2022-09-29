@@ -289,7 +289,7 @@ namespace nes_emulator_tests
 			Assert::IsFalse(cpu_get_N_flag(&cpu));
 		}
 
-		TEST_METHOD(LDA_zero_page_absolute_positive_number)
+		TEST_METHOD(LDA_absolute_positive_number)
 		{
 			cpu cpu;
 
@@ -317,7 +317,7 @@ namespace nes_emulator_tests
 			Assert::IsFalse(cpu_get_N_flag(&cpu));
 		}
 
-		TEST_METHOD(LDA_zero_page_absolute_negative_number)
+		TEST_METHOD(LDA_absolute_negative_number)
 		{
 			cpu cpu;
 
@@ -345,7 +345,7 @@ namespace nes_emulator_tests
 			Assert::IsTrue(cpu_get_N_flag(&cpu));
 		}
 
-		TEST_METHOD(LDA_zero_page_absolute_zero)
+		TEST_METHOD(LDA_absolute_zero)
 		{
 			cpu cpu;
 
@@ -368,6 +368,409 @@ namespace nes_emulator_tests
 
 			Assert::IsTrue(cpu.SP == 0xFF);
 			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0x00);
+			Assert::IsTrue(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+
+
+		TEST_METHOD(LDA_absolute_x_positive_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xBD;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = 0x11;
+
+			cpu_init(&cpu);
+
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xBD);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0x11);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_absolute_x_negative_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xBD;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = -10;
+
+			cpu_init(&cpu);
+
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xBD);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0xF6);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsTrue(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_absolute_x_zero)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xBD;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = 0x00;
+
+			cpu_init(&cpu);
+
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xBD);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0x00);
+			Assert::IsTrue(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+
+		TEST_METHOD(LDA_absolute_y_positive_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB9;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = 0x11;
+
+			cpu_init(&cpu);
+
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB9);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0x11);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_absolute_y_negative_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB9;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = -10;
+
+			cpu_init(&cpu);
+
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB9);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0xF6);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsTrue(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_absolute_y_zero)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB9;
+
+			// low byte
+			cpu.memory.data[0x8001] = 0x01;
+			// high byte
+			cpu.memory.data[0x8002] = 0x55;
+			// value
+			cpu.memory.data[0x5511] = 0x00;
+
+			cpu_init(&cpu);
+
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB9);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8002);
+			Assert::IsTrue(cpu.A == 0x00);
+			Assert::IsTrue(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+
+		TEST_METHOD(LDA_indirect_x_positive_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xA1;
+
+			// first part of the vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte
+			cpu.memory.data[0x12] = 0x11;
+			// high byte
+			cpu.memory.data[0x13] = 0x01;
+
+			// value
+			cpu.memory.data[0x0111] = 0x11;
+
+			cpu_init(&cpu);
+
+			// will be added to the vector
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xA1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
+			Assert::IsTrue(cpu.A == 0x11);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_indirect_x_negative_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xA1;
+
+			// first part of the vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte
+			cpu.memory.data[0x12] = 0x11;
+			// high byte
+			cpu.memory.data[0x13] = 0x01;
+
+			// value
+			cpu.memory.data[0x0111] = -10;
+
+			cpu_init(&cpu);
+
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xA1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
+			Assert::IsTrue(cpu.A == 0xF6);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsTrue(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_indirect_x_zero)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xA1;
+
+			// first part of the vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte
+			cpu.memory.data[0x12] = 0x11;
+			// high byte
+			cpu.memory.data[0x13] = 0x01;
+
+			// value
+			cpu.memory.data[0x0111] = 0x00;
+
+			cpu_init(&cpu);
+
+			cpu.X = 0x10;
+
+			cpu_exec(&cpu, 0xA1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
+			Assert::IsTrue(cpu.A == 0x00);
+			Assert::IsTrue(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+
+		TEST_METHOD(LDA_indirect_y_positive_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB1;
+
+			// vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte of the address
+			cpu.memory.data[0x02] = 0x11;
+			// high byte of the address
+			cpu.memory.data[0x03] = 0x01;
+
+			// value
+			cpu.memory.data[0x0121] = 0x11;
+
+			cpu_init(&cpu);
+
+			// will be added to the address
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
+			Assert::IsTrue(cpu.A == 0x11);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsFalse(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_indirect_y_negative_number)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB1;
+
+			// vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte of the address
+			cpu.memory.data[0x02] = 0x11;
+			// high byte of the address
+			cpu.memory.data[0x03] = 0x01;
+
+			// value
+			cpu.memory.data[0x0121] = -10;
+
+			cpu_init(&cpu);
+
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
+			Assert::IsTrue(cpu.A == 0xF6);
+			Assert::IsFalse(cpu_get_Z_flag(&cpu));
+			Assert::IsTrue(cpu_get_N_flag(&cpu));
+		}
+
+		TEST_METHOD(LDA_indirect_y_zero)
+		{
+			cpu cpu;
+
+			// reset vector
+			cpu.memory.data[0xFFFC] = 0x00;
+			cpu.memory.data[0xFFFD] = 0x80;
+
+			// instruction
+			cpu.memory.data[0x8000] = 0xB1;
+
+			// vector
+			cpu.memory.data[0x8001] = 0x02;
+
+			// low byte of the address
+			cpu.memory.data[0x02] = 0x11;
+			// high byte of the address
+			cpu.memory.data[0x03] = 0x01;
+
+			// value
+			cpu.memory.data[0x0121] = 0x00;
+
+			cpu_init(&cpu);
+
+			cpu.Y = 0x10;
+
+			cpu_exec(&cpu, 0xB1);
+
+			Assert::IsTrue(cpu.SP == 0xFF);
+			Assert::IsTrue(cpu.PC == 0x8001);
 			Assert::IsTrue(cpu.A == 0x00);
 			Assert::IsTrue(cpu_get_Z_flag(&cpu));
 			Assert::IsFalse(cpu_get_N_flag(&cpu));
