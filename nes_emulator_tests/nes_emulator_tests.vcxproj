@@ -161,7 +161,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpu_flags_tests.cpp" />
-    <ClCompile Include="cpu_instructions_tests.cpp" />
+    <ClCompile Include="cpu_tests.cpp" />
+    <ClCompile Include="lda_tests.cpp" />
+    <ClCompile Include="ldx_tests.cpp" />
+    <ClCompile Include="ldy_tests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

@@ -24,25 +24,25 @@ void cpu_exec(cpu* cpu, const byte instruction)
 	switch (instruction)
 	{
 		OP(A9, lda, immediate)
-			OP(A5, lda, zero_page)
-			OP(B5, lda, zero_page_x)
-			OP(AD, lda, absolute)
-			OP(BD, lda, absolute_x)
-			OP(B9, lda, absolute_y)
-			OP(A1, lda, indexed_indirect)
-			OP(B1, lda, indirect_indexed)
+		OP(A5, lda, zero_page)
+		OP(B5, lda, zero_page_x)
+		OP(AD, lda, absolute)
+		OP(BD, lda, absolute_x)
+		OP(B9, lda, absolute_y)
+		OP(A1, lda, indexed_indirect)
+		OP(B1, lda, indirect_indexed)
 
-			OP(A2, ldx, immediate)
-			OP(A6, ldx, zero_page)
-			OP(B6, ldx, zero_page_y)
-			OP(AE, ldx, absolute)
-			OP(BE, ldx, absolute_y)
+		OP(A2, ldx, immediate)
+		OP(A6, ldx, zero_page)
+		OP(B6, ldx, zero_page_y)
+		OP(AE, ldx, absolute)
+		OP(BE, ldx, absolute_y)
 
-			OP(A0, ldy, immediate)
-			OP(A4, ldy, zero_page)
-			OP(B4, ldy, zero_page_x)
-			OP(AC, ldy, absolute)
-			OP(BC, ldy, absolute_x)
+		OP(A0, ldy, immediate)
+		OP(A4, ldy, zero_page)
+		OP(B4, ldy, zero_page_x)
+		OP(AC, ldy, absolute)
+		OP(BC, ldy, absolute_x)
 
 			///////////////////////////////////////////////////////////////////
 			// ! ADC opcodes
@@ -673,13 +673,29 @@ void cpu_set_N_flag(cpu* cpu, const char val)
 static word get_memory_address(cpu* cpu, const address_mode address_mode)
 {
 	switch (address_mode) {
-		case implicit: break;
-		case accumulator: break;
-		case immediate: return cpu->PC;
-		case zero_page: return cpu->memory.data[cpu->PC];
-		case zero_page_x: return cpu->memory.data[cpu->PC] + cpu->X;
-		case zero_page_y: break;
-		case relative: break;
+		case implicit: 
+			assert(false);
+		break;
+
+		case accumulator: 
+			assert(false);
+		break;
+		case immediate: 
+			return cpu->PC;
+
+		case zero_page: 
+			return cpu->memory.data[cpu->PC];
+
+		case zero_page_x: 
+			return cpu->memory.data[cpu->PC] + cpu->X;
+
+		case zero_page_y: 
+			return cpu->memory.data[cpu->PC] + cpu->Y;
+
+		case relative: 
+			assert(false);
+		break;
+
 		case absolute:
 		{
 			const byte low_byte = cpu->memory.data[cpu->PC];
@@ -687,6 +703,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			const byte high_byte = cpu->memory.data[cpu->PC];
 			return  ((word)(high_byte << 8)) | low_byte;
 		}
+
 		case absolute_x:
 		{
 			const byte low_byte = cpu->memory.data[cpu->PC];
@@ -696,6 +713,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			address += cpu->X;
 			return address;
 		}
+
 		case absolute_y:
 		{
 			const byte low_byte = cpu->memory.data[cpu->PC];
@@ -705,7 +723,10 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			address += cpu->Y;
 			return address;
 		}
-		case indirect: break;
+
+		case indirect: 
+			assert(false); break;
+
 		case indexed_indirect:
 		{
 			const byte vector = cpu->memory.data[cpu->PC] + cpu->X;
@@ -714,7 +735,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			const byte high_byte = cpu->memory.data[vector + 1];
 			return  ((word)(high_byte << 8)) | low_byte;
 		}
-		break;
+
 		case indirect_indexed:
 		{
 			const byte vector = cpu->memory.data[cpu->PC];
@@ -726,9 +747,11 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			address += cpu->Y;
 			return  address;
 		}
-		break;
+
 		default: assert(false);
 	}
+
+	return 0;
 }
 
 void lda(cpu* cpu, const address_mode address_mode)
@@ -742,12 +765,18 @@ void lda(cpu* cpu, const address_mode address_mode)
 
 void ldx(cpu* cpu, const address_mode address_mode)
 {
+	cpu->PC++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->X = cpu->memory.data[address];
 
-	return;
+	set_negative_and_zero_flags(cpu, cpu->X);
 }
 
 void ldy(cpu* cpu, const address_mode address_mode)
 {
+	cpu->PC++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->Y = cpu->memory.data[address];
 
-	return;
+	set_negative_and_zero_flags(cpu, cpu->Y);
 }
