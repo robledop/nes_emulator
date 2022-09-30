@@ -31,13 +31,13 @@ typedef struct
 typedef struct
 {
 	// Accumulator
-	byte A;
+	byte a;
 
 	// Index register
-	byte X, Y;
+	byte x, y;
 
 	// Stack pointer
-	byte SP;
+	byte sp;
 
 	// Processor status
 	// N, V, 1, B, D, I, Z, C
@@ -49,10 +49,10 @@ typedef struct
 	// I = IRQB disable
 	// Z = Zero
 	// C = Carry
-	byte P;
+	byte p;
 
 	// Program counter
-	word PC;
+	word pc;
 
 	memory memory;
 } cpu;
@@ -60,31 +60,24 @@ typedef struct
 #define OP(opcode, operation, address_mode) \
 case 0x##opcode: \
 	##operation(cpu, ##address_mode); \
-	break;
+	break
 
 void cpu_exec(cpu* cpu, byte instruction);
 void cpu_clear_memory(cpu* cpu);
 void cpu_init(cpu* cpu);
 
-bool cpu_get_C_flag(const cpu* cpu);
-bool cpu_get_Z_flag(const cpu* cpu);
-bool cpu_get_I_flag(const cpu* cpu);
-bool cpu_get_D_flag(const cpu* cpu);
-bool cpu_get_B_flag(const cpu* cpu);
-bool cpu_get_V_flag(const cpu* cpu);
-bool cpu_get_N_flag(const cpu* cpu);
+bool cpu_get_c_flag(const cpu* cpu);
+bool cpu_get_z_flag(const cpu* cpu);
+bool cpu_get_i_flag(const cpu* cpu);
+bool cpu_get_d_flag(const cpu* cpu);
+bool cpu_get_b_flag(const cpu* cpu);
+bool cpu_get_v_flag(const cpu* cpu);
+bool cpu_get_n_flag(const cpu* cpu);
 
-void cpu_set_C_flag(cpu* cpu, const char val);
-void cpu_set_Z_flag(cpu* cpu, const char val);
-void cpu_set_I_flag(cpu* cpu, const char val);
-void cpu_set_D_flag(cpu* cpu, const char val);
-void cpu_set_B_flag(cpu* cpu, const char val);
-void cpu_set_V_flag(cpu* cpu, const char val);
-void cpu_set_N_flag(cpu* cpu, const char val);
-
-
-// opcodes
-
-void lda(cpu* cpu, address_mode address_mode);
-void ldx(cpu* cpu, const address_mode address_mode);
-void ldy(cpu* cpu, const address_mode address_mode);
+void cpu_set_c_flag(cpu* cpu, const char val);
+void cpu_set_z_flag(cpu* cpu, const char val);
+void cpu_set_i_flag(cpu* cpu, const char val);
+void cpu_set_d_flag(cpu* cpu, const char val);
+void cpu_set_b_flag(cpu* cpu, const char val);
+void cpu_set_v_flag(cpu* cpu, const char val);
+void cpu_set_n_flag(cpu* cpu, const char val);

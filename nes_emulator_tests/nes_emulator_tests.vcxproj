@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="adc_tests.cpp" />
     <ClCompile Include="cpu_flags_tests.cpp" />
     <ClCompile Include="cpu_tests.cpp" />
     <ClCompile Include="lda_tests.cpp" />

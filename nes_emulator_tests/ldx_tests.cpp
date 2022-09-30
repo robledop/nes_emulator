@@ -33,11 +33,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xA2);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x11);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x11);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_immediate_negative_number)
@@ -57,11 +57,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xA2);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0xF6);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsTrue(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0xF6);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsTrue(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_immediate_zero)
@@ -81,11 +81,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xA2);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 
@@ -109,11 +109,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xA6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x11);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x11);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_zero_page_negative_number)
@@ -136,11 +136,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xA6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0xF6);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsTrue(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0xF6);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsTrue(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_zero_page_zero)
@@ -162,14 +162,14 @@ namespace nes_emulator_tests
 
 
 			cpu_init(&cpu);
-			cpu.X = 0x01;
+			cpu.x = 0x01;
 			cpu_exec(&cpu, 0xA6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 
@@ -192,16 +192,16 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
-			cpu.X = 0x01;
+			cpu.y = 0x10;
+			cpu.x = 0x01;
 
 			cpu_exec(&cpu, 0xB6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x11);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x11);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_zero_page_y_negative_number)
@@ -223,16 +223,16 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
-			cpu.X = 0x01;
+			cpu.y = 0x10;
+			cpu.x = 0x01;
 
 			cpu_exec(&cpu, 0xB6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0xF6);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsTrue(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0xF6);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsTrue(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_zero_page_y_zero)
@@ -254,16 +254,16 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
-			cpu.X = 0x01;
+			cpu.y = 0x10;
+			cpu.x = 0x01;
 
 			cpu_exec(&cpu, 0xB6);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8001);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8001);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_positive_number)
@@ -287,11 +287,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xAE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0x11);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0x11);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_negative_number)
@@ -315,11 +315,11 @@ namespace nes_emulator_tests
 			cpu_init(&cpu);
 			cpu_exec(&cpu, 0xAE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0xF6);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsTrue(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0xF6);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsTrue(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_zero)
@@ -341,14 +341,14 @@ namespace nes_emulator_tests
 			cpu.memory.data[0x5501] = 0x00;
 
 			cpu_init(&cpu);
-			cpu.X = 0x01;
+			cpu.x = 0x01;
 			cpu_exec(&cpu, 0xAE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_y_positive_number)
@@ -371,15 +371,15 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
+			cpu.y = 0x10;
 
 			cpu_exec(&cpu, 0xBE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0x11);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0x11);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_y_negative_number)
@@ -402,15 +402,15 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
+			cpu.y = 0x10;
 
 			cpu_exec(&cpu, 0xBE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0xF6);
-			Assert::IsFalse(cpu_get_Z_flag(&cpu));
-			Assert::IsTrue(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0xF6);
+			Assert::IsFalse(cpu_get_z_flag(&cpu));
+			Assert::IsTrue(cpu_get_n_flag(&cpu));
 		}
 
 		TEST_METHOD(LDX_absolute_y_zero)
@@ -433,16 +433,16 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			cpu.Y = 0x10;
-			cpu.X = 0x01;
+			cpu.y = 0x10;
+			cpu.x = 0x01;
 
 			cpu_exec(&cpu, 0xBE);
 
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.PC == 0x8002);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu_get_Z_flag(&cpu));
-			Assert::IsFalse(cpu_get_N_flag(&cpu));
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.pc == 0x8002);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu_get_z_flag(&cpu));
+			Assert::IsFalse(cpu_get_n_flag(&cpu));
 		}
 	};
 }

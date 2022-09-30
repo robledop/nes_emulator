@@ -1,77 +1,102 @@
 #include "cpu.h"
-
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "memory.h"
 
-// https://www.nesdev.org/obelisk-6502-guide/reference.html
+static void lda(cpu* cpu, address_mode address_mode);
+static void ldx(cpu* cpu, const address_mode address_mode);
+static void ldy(cpu* cpu, const address_mode address_mode);
+static void adc(cpu* cpu, const address_mode address_mode);
 
-static void set_negative_and_zero_flags(cpu* cpu, const byte reg)
+
+static void calc_carry(cpu* cpu, const word byte)
 {
-	if (reg & 0b10000000)
-	{
-		cpu_set_N_flag(cpu, 1);
+	if (byte & 0xFF00) {
+		cpu_set_c_flag(cpu, 1);
 	}
-
-	if (reg == 0)
-	{
-		cpu_set_Z_flag(cpu, 1);
+	else {
+		cpu_set_c_flag(cpu, 0);
 	}
 }
+
+static void calc_zero(cpu* cpu, const byte byte)
+{
+	if (byte == 0x00) {
+		cpu_set_z_flag(cpu, 1);
+	}
+	else {
+		cpu_set_z_flag(cpu, 0);
+	}
+}
+
+static void calc_negative(cpu* cpu, const byte byte)
+{
+	if (byte & 0b10000000) {
+		cpu_set_n_flag(cpu, 1);
+	}
+	else {
+		cpu_set_n_flag(cpu, 0);
+	}
+}
+
+// http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+// Two numbers that have the same sign are added, and the result has a different sign
+static void calc_overflow(cpu* cpu, const word result, const byte operand)
+{
+	const byte a_sign = cpu->a & 0x80;
+	const byte operand_sign = operand & 0x80;
+	const byte result_sign = result & 0x80;
+
+	if ((a_sign == operand_sign) && a_sign != result_sign)
+	{
+		cpu_set_v_flag(cpu, 1);
+	} else
+	{
+		cpu_set_v_flag(cpu, 0);
+	}
+}
+
+// https://www.nesdev.org/obelisk-6502-guide/reference.html
 
 void cpu_exec(cpu* cpu, const byte instruction)
 {
 	switch (instruction)
 	{
-		OP(A9, lda, immediate)
-		OP(A5, lda, zero_page)
-		OP(B5, lda, zero_page_x)
-		OP(AD, lda, absolute)
-		OP(BD, lda, absolute_x)
-		OP(B9, lda, absolute_y)
-		OP(A1, lda, indexed_indirect)
-		OP(B1, lda, indirect_indexed)
+		OP(A9, lda, immediate);
+		OP(A5, lda, zero_page);
+		OP(B5, lda, zero_page_x);
+		OP(AD, lda, absolute);
+		OP(BD, lda, absolute_x);
+		OP(B9, lda, absolute_y);
+		OP(A1, lda, indexed_indirect);
+		OP(B1, lda, indirect_indexed);
 
-		OP(A2, ldx, immediate)
-		OP(A6, ldx, zero_page)
-		OP(B6, ldx, zero_page_y)
-		OP(AE, ldx, absolute)
-		OP(BE, ldx, absolute_y)
+		OP(A2, ldx, immediate);
+		OP(A6, ldx, zero_page);
+		OP(B6, ldx, zero_page_y);
+		OP(AE, ldx, absolute);
+		OP(BE, ldx, absolute_y);
 
-		OP(A0, ldy, immediate)
-		OP(A4, ldy, zero_page)
-		OP(B4, ldy, zero_page_x)
-		OP(AC, ldy, absolute)
-		OP(BC, ldy, absolute_x)
+		OP(A0, ldy, immediate);
+		OP(A4, ldy, zero_page);
+		OP(B4, ldy, zero_page_x);
+		OP(AC, ldy, absolute);
+		OP(BC, ldy, absolute_x);
 
-			///////////////////////////////////////////////////////////////////
-			// ! ADC opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(69, adc, immediate);
+		OP(65, adc, zero_page);
+		OP(75, adc, zero_page_x);
+		OP(6D, adc, absolute);
+		OP(7D, adc, absolute_x);
+		OP(79, adc, absolute_y);
+		OP(61, adc, indexed_indirect);
+		OP(71, adc, indirect_indexed);
 
-		case 0x69:
-			break;
 
-		case 0x65:
-			break;
-
-		case 0x75:
-			break;
-
-		case 0x6D:
-			break;
-
-		case 0x7D:
-			break;
-		case 0x79:
-			break;
-		case 0x61:
-			break;
-		case 0x71:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! AND opcodes
-			///////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////
+		// ! AND opcodes
+		///////////////////////////////////////////////////////////////////
 
 		case 0x29:
 			break;
@@ -591,145 +616,146 @@ void cpu_clear_memory(cpu* cpu)
 
 void cpu_init(cpu* cpu)
 {
-	cpu->SP = 0xFF;
-	cpu->P = 0x00;
-	cpu->A = 0x00;
-	cpu->X = 0x00;
-	cpu->Y = 0x00;
-	cpu->PC = ((word)(cpu->memory.data[0xFFFD] << 8)) | cpu->memory.data[0xFFFC];
+	cpu->sp = 0xFF;
+	cpu->p = 0b00010000;
+	cpu->a = 0x00;
+	cpu->x = 0x00;
+	cpu->y = 0x00;
+
+	cpu->pc = ((word)(cpu->memory.data[0xFFFD] << 8)) | cpu->memory.data[0xFFFC];
 }
 
-bool cpu_get_C_flag(const cpu* cpu)
+bool cpu_get_c_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00000001;
+	return cpu->p & 0b00000001;
 }
 
-bool cpu_get_Z_flag(const cpu* cpu)
+bool cpu_get_z_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00000010;
+	return cpu->p & 0b00000010;
 }
 
-bool cpu_get_I_flag(const cpu* cpu)
+bool cpu_get_i_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00000100;
+	return cpu->p & 0b00000100;
 }
 
-bool cpu_get_D_flag(const cpu* cpu)
+bool cpu_get_d_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00001000;
+	return cpu->p & 0b00001000;
 }
 
-bool cpu_get_B_flag(const cpu* cpu)
+bool cpu_get_b_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00010000;
+	return cpu->p & 0b00010000;
 }
 
-bool cpu_get_V_flag(const cpu* cpu)
+bool cpu_get_v_flag(const cpu* cpu)
 {
-	return cpu->P & 0b00100000;
+	return cpu->p & 0b01000000;
 }
 
-bool cpu_get_N_flag(const cpu* cpu)
+bool cpu_get_n_flag(const cpu* cpu)
 {
-	return cpu->P & 0b10000000;
+	return cpu->p & 0b10000000;
 }
 
 
-void cpu_set_C_flag(cpu* cpu, const char val)
+void cpu_set_c_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 0);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 0);
 }
 
-void cpu_set_Z_flag(cpu* cpu, const char val)
+void cpu_set_z_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 1);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 1);
 }
 
-void cpu_set_I_flag(cpu* cpu, const char val)
+void cpu_set_i_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 2);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 2);
 }
 
-void cpu_set_D_flag(cpu* cpu, const char val)
+void cpu_set_d_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 3);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 3);
 }
 
-void cpu_set_B_flag(cpu* cpu, const char val)
+void cpu_set_b_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 4);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 4);
 }
 
-void cpu_set_V_flag(cpu* cpu, const char val)
+void cpu_set_v_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 6);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 6);
 }
 
-void cpu_set_N_flag(cpu* cpu, const char val)
+void cpu_set_n_flag(cpu* cpu, const char val)
 {
-	cpu->P ^= (-val ^ cpu->P) & (1UL << 7);
+	cpu->p ^= (-val ^ cpu->p) & (1UL << 7);
 }
 
 static word get_memory_address(cpu* cpu, const address_mode address_mode)
 {
 	switch (address_mode) {
-		case implicit: 
+		case implicit:
 			assert(false);
-		break;
+			break;
 
-		case accumulator: 
+		case accumulator:
 			assert(false);
-		break;
-		case immediate: 
-			return cpu->PC;
+			break;
+		case immediate:
+			return cpu->pc;
 
-		case zero_page: 
-			return cpu->memory.data[cpu->PC];
+		case zero_page:
+			return cpu->memory.data[cpu->pc];
 
-		case zero_page_x: 
-			return cpu->memory.data[cpu->PC] + cpu->X;
+		case zero_page_x:
+			return cpu->memory.data[cpu->pc] + cpu->x;
 
-		case zero_page_y: 
-			return cpu->memory.data[cpu->PC] + cpu->Y;
+		case zero_page_y:
+			return cpu->memory.data[cpu->pc] + cpu->y;
 
-		case relative: 
+		case relative:
 			assert(false);
-		break;
+			break;
 
 		case absolute:
 		{
-			const byte low_byte = cpu->memory.data[cpu->PC];
-			cpu->PC++;
-			const byte high_byte = cpu->memory.data[cpu->PC];
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
 			return  ((word)(high_byte << 8)) | low_byte;
 		}
 
 		case absolute_x:
 		{
-			const byte low_byte = cpu->memory.data[cpu->PC];
-			cpu->PC++;
-			const byte high_byte = cpu->memory.data[cpu->PC];
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
 			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->X;
+			address += cpu->x;
 			return address;
 		}
 
 		case absolute_y:
 		{
-			const byte low_byte = cpu->memory.data[cpu->PC];
-			cpu->PC++;
-			const byte high_byte = cpu->memory.data[cpu->PC];
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
 			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->Y;
+			address += cpu->y;
 			return address;
 		}
 
-		case indirect: 
+		case indirect:
 			assert(false); break;
 
 		case indexed_indirect:
 		{
-			const byte vector = cpu->memory.data[cpu->PC] + cpu->X;
+			const byte vector = cpu->memory.data[cpu->pc] + cpu->x;
 
 			const byte low_byte = cpu->memory.data[vector];
 			const byte high_byte = cpu->memory.data[vector + 1];
@@ -738,13 +764,13 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indirect_indexed:
 		{
-			const byte vector = cpu->memory.data[cpu->PC];
+			const byte vector = cpu->memory.data[cpu->pc];
 
 			const byte low_byte = cpu->memory.data[vector];
 			const byte high_byte = cpu->memory.data[vector + 1];
 
 			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->Y;
+			address += cpu->y;
 			return  address;
 		}
 
@@ -754,29 +780,45 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 	return 0;
 }
 
-void lda(cpu* cpu, const address_mode address_mode)
+static void lda(cpu* cpu, const address_mode address_mode)
 {
-	cpu->PC++;
+	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->A = cpu->memory.data[address];
+	cpu->a = cpu->memory.data[address];
 
-	set_negative_and_zero_flags(cpu, cpu->A);
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);
 }
 
-void ldx(cpu* cpu, const address_mode address_mode)
+static void ldx(cpu* cpu, const address_mode address_mode)
 {
-	cpu->PC++;
+	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->X = cpu->memory.data[address];
+	cpu->x = cpu->memory.data[address];
 
-	set_negative_and_zero_flags(cpu, cpu->X);
+	calc_zero(cpu, cpu->x);
+	calc_negative(cpu, cpu->x);
 }
 
-void ldy(cpu* cpu, const address_mode address_mode)
+static void ldy(cpu* cpu, const address_mode address_mode)
 {
-	cpu->PC++;
+	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->Y = cpu->memory.data[address];
+	cpu->y = cpu->memory.data[address];
 
-	set_negative_and_zero_flags(cpu, cpu->Y);
+	calc_zero(cpu, cpu->y);
+	calc_negative(cpu, cpu->y);
+}
+
+static void adc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+	const word result = cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0);
+	calc_carry(cpu, result);
+	calc_overflow(cpu, result, memory);
+	calc_zero(cpu, (byte)result);
+	calc_negative(cpu, (byte)result);
+	cpu->a = (byte)result;
 }

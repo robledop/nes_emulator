@@ -26,11 +26,11 @@ namespace nes_emulator_tests
 
 			cpu_init(&cpu);
 
-			Assert::IsTrue(cpu.A == 0x00);
-			Assert::IsTrue(cpu.SP == 0xFF);
-			Assert::IsTrue(cpu.X == 0x00);
-			Assert::IsTrue(cpu.Y == 0x00);
-			Assert::IsTrue(cpu.PC == 0x8000);
+			Assert::IsTrue(cpu.a == 0x00);
+			Assert::IsTrue(cpu.sp == 0xFF);
+			Assert::IsTrue(cpu.x == 0x00);
+			Assert::IsTrue(cpu.y == 0x00);
+			Assert::IsTrue(cpu.pc == 0x8000);
 		}
 
 		TEST_METHOD(cpu_clear_memory_test)
