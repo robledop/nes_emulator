@@ -4,11 +4,6 @@
 #include <stdio.h>
 #include "memory.h"
 
-static void lda(cpu* cpu, address_mode address_mode);
-static void ldx(cpu* cpu, const address_mode address_mode);
-static void ldy(cpu* cpu, const address_mode address_mode);
-static void adc(cpu* cpu, const address_mode address_mode);
-
 
 static void calc_carry(cpu* cpu, const word byte)
 {
@@ -51,14 +46,198 @@ static void calc_overflow(cpu* cpu, const word result, const byte operand)
 	if ((a_sign == operand_sign) && a_sign != result_sign)
 	{
 		cpu_set_v_flag(cpu, 1);
-	} else
+	}
+	else
 	{
 		cpu_set_v_flag(cpu, 0);
 	}
 }
 
-// https://www.nesdev.org/obelisk-6502-guide/reference.html
+static word get_memory_address(cpu* cpu, const address_mode address_mode)
+{
+	switch (address_mode) {
+		case implicit:
+			assert(false);
+			break;
 
+		case accumulator:
+			break;
+
+		case immediate:
+			return cpu->pc;
+
+		case zero_page:
+			return cpu->memory.data[cpu->pc];
+
+		case zero_page_x:
+			return cpu->memory.data[cpu->pc] + cpu->x;
+
+		case zero_page_y:
+			return cpu->memory.data[cpu->pc] + cpu->y;
+
+		case relative:
+			return cpu->memory.data[cpu->pc];
+
+		case absolute:
+		{
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
+			return  ((word)(high_byte << 8)) | low_byte;
+		}
+
+		case absolute_x:
+		{
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->x;
+			return address;
+		}
+
+		case absolute_y:
+		{
+			const byte low_byte = cpu->memory.data[cpu->pc];
+			cpu->pc++;
+			const byte high_byte = cpu->memory.data[cpu->pc];
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->y;
+			return address;
+		}
+
+		case indirect:
+			assert(false); break;
+
+		case indexed_indirect:
+		{
+			const byte vector = cpu->memory.data[cpu->pc] + cpu->x;
+
+			const byte low_byte = cpu->memory.data[vector];
+			const byte high_byte = cpu->memory.data[vector + 1];
+			return  ((word)(high_byte << 8)) | low_byte;
+		}
+
+		case indirect_indexed:
+		{
+			const byte vector = cpu->memory.data[cpu->pc];
+
+			const byte low_byte = cpu->memory.data[vector];
+			const byte high_byte = cpu->memory.data[vector + 1];
+
+			word address = ((word)(high_byte << 8)) | low_byte;
+			address += cpu->y;
+			return  address;
+		}
+
+		default: assert(false);
+	}
+
+	return 0;
+}
+
+
+static void lda(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->a = cpu->memory.data[address];
+
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);
+}
+
+static void ldx(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->x = cpu->memory.data[address];
+
+	calc_zero(cpu, cpu->x);
+	calc_negative(cpu, cpu->x);
+}
+
+static void ldy(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->y = cpu->memory.data[address];
+
+	calc_zero(cpu, cpu->y);
+	calc_negative(cpu, cpu->y);
+}
+
+// Add with Carry
+static void adc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+	const word result = cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0);
+	calc_carry(cpu, result);
+	calc_overflow(cpu, result, memory);
+	calc_zero(cpu, (byte)result);
+	calc_negative(cpu, (byte)result);
+	cpu->a = (byte)result;
+}
+
+// Logical AND
+static void and (cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->a &= cpu->memory.data[address];
+	calc_negative(cpu, cpu->a);
+	calc_zero(cpu, cpu->a);
+}
+
+// Arithmetic Shift Left
+static void asl(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (address_mode == accumulator)
+	{
+		cpu_set_c_flag(cpu, (cpu->a & 0x10000000));
+		cpu->a <<= 1;
+	}
+	else {
+		const word address = get_memory_address(cpu, address_mode);
+		cpu_set_c_flag(cpu, (cpu->memory.data[address] & 0x10000000));
+		cpu->memory.data[address] <<= 1;
+	}
+}
+
+// Branch if Carry Clear
+static void bcc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (!cpu_get_c_flag(cpu))
+	{
+		cpu->pc += get_memory_address(cpu, address_mode);
+	}
+}
+
+// Branch if Carry Set
+static void bcs(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (cpu_get_c_flag(cpu))
+	{
+		cpu->pc += get_memory_address(cpu, address_mode);
+	}
+}
+
+// Branch if Equal
+static void beq(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (cpu_get_z_flag(cpu))
+	{
+		cpu->pc += get_memory_address(cpu, address_mode);
+	}
+}
+
+// https://www.nesdev.org/obelisk-6502-guide/reference.html
 void cpu_exec(cpu* cpu, const byte instruction)
 {
 	switch (instruction)
@@ -93,63 +272,26 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		OP(61, adc, indexed_indirect);
 		OP(71, adc, indirect_indexed);
 
+		OP(29, and, immediate);
+		OP(25, and, zero_page);
+		OP(35, and, zero_page_x);
+		OP(2D, and, absolute);
+		OP(3D, and, absolute_x);
+		OP(39, and, absolute_y);
+		OP(21, and, indexed_indirect);
+		OP(31, and, indirect_indexed);
 
-		///////////////////////////////////////////////////////////////////
-		// ! AND opcodes
-		///////////////////////////////////////////////////////////////////
+		OP(0A, asl, accumulator);
+		OP(06, asl, zero_page);
+		OP(16, asl, zero_page_x);
+		OP(0E, asl, absolute);
+		OP(1E, asl, absolute_x);
 
-		case 0x29:
-			break;
-		case 0x25:
-			break;
-		case 0x35:
-			break;
-		case 0x2D:
-			break;
-		case 0x3D:
-			break;
-		case 0x39:
-			break;
-		case 0x21:
-			break;
-		case 0x31:
-			break;
+		OP(90, bcc, relative);
 
-			///////////////////////////////////////////////////////////////////
-			// ! ASL opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(B0, bcs, relative);
 
-		case 0x0A:
-			break;
-		case 0x06:
-			break;
-		case 0x16:
-			break;
-		case 0x0E:
-			break;
-		case 0x1E:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! BCC opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x90:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! BCS opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xB0:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! BEQ opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xF0:
-			break;
+		OP(F0, beq, relative);
 
 			///////////////////////////////////////////////////////////////////
 			// ! BIT opcodes
@@ -661,7 +803,7 @@ bool cpu_get_n_flag(const cpu* cpu)
 }
 
 
-void cpu_set_c_flag(cpu* cpu, const char val)
+void cpu_set_c_flag(cpu* cpu, const unsigned char val)
 {
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 0);
 }
@@ -696,129 +838,5 @@ void cpu_set_n_flag(cpu* cpu, const char val)
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 7);
 }
 
-static word get_memory_address(cpu* cpu, const address_mode address_mode)
-{
-	switch (address_mode) {
-		case implicit:
-			assert(false);
-			break;
 
-		case accumulator:
-			assert(false);
-			break;
-		case immediate:
-			return cpu->pc;
 
-		case zero_page:
-			return cpu->memory.data[cpu->pc];
-
-		case zero_page_x:
-			return cpu->memory.data[cpu->pc] + cpu->x;
-
-		case zero_page_y:
-			return cpu->memory.data[cpu->pc] + cpu->y;
-
-		case relative:
-			assert(false);
-			break;
-
-		case absolute:
-		{
-			const byte low_byte = cpu->memory.data[cpu->pc];
-			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
-			return  ((word)(high_byte << 8)) | low_byte;
-		}
-
-		case absolute_x:
-		{
-			const byte low_byte = cpu->memory.data[cpu->pc];
-			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
-			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->x;
-			return address;
-		}
-
-		case absolute_y:
-		{
-			const byte low_byte = cpu->memory.data[cpu->pc];
-			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
-			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->y;
-			return address;
-		}
-
-		case indirect:
-			assert(false); break;
-
-		case indexed_indirect:
-		{
-			const byte vector = cpu->memory.data[cpu->pc] + cpu->x;
-
-			const byte low_byte = cpu->memory.data[vector];
-			const byte high_byte = cpu->memory.data[vector + 1];
-			return  ((word)(high_byte << 8)) | low_byte;
-		}
-
-		case indirect_indexed:
-		{
-			const byte vector = cpu->memory.data[cpu->pc];
-
-			const byte low_byte = cpu->memory.data[vector];
-			const byte high_byte = cpu->memory.data[vector + 1];
-
-			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->y;
-			return  address;
-		}
-
-		default: assert(false);
-	}
-
-	return 0;
-}
-
-static void lda(cpu* cpu, const address_mode address_mode)
-{
-	cpu->pc++;
-	const word address = get_memory_address(cpu, address_mode);
-	cpu->a = cpu->memory.data[address];
-
-	calc_zero(cpu, cpu->a);
-	calc_negative(cpu, cpu->a);
-}
-
-static void ldx(cpu* cpu, const address_mode address_mode)
-{
-	cpu->pc++;
-	const word address = get_memory_address(cpu, address_mode);
-	cpu->x = cpu->memory.data[address];
-
-	calc_zero(cpu, cpu->x);
-	calc_negative(cpu, cpu->x);
-}
-
-static void ldy(cpu* cpu, const address_mode address_mode)
-{
-	cpu->pc++;
-	const word address = get_memory_address(cpu, address_mode);
-	cpu->y = cpu->memory.data[address];
-
-	calc_zero(cpu, cpu->y);
-	calc_negative(cpu, cpu->y);
-}
-
-static void adc(cpu* cpu, const address_mode address_mode)
-{
-	cpu->pc++;
-	const word address = get_memory_address(cpu, address_mode);
-	const byte memory = cpu->memory.data[address];
-	const word result = cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0);
-	calc_carry(cpu, result);
-	calc_overflow(cpu, result, memory);
-	calc_zero(cpu, (byte)result);
-	calc_negative(cpu, (byte)result);
-	cpu->a = (byte)result;
-}
