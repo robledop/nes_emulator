@@ -213,7 +213,8 @@ static void bcc(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (!cpu_get_c_flag(cpu))
 	{
-		cpu->pc += get_memory_address(cpu, address_mode);
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
 	}
 }
 
@@ -223,7 +224,8 @@ static void bcs(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (cpu_get_c_flag(cpu))
 	{
-		cpu->pc += get_memory_address(cpu, address_mode);
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
 	}
 }
 
@@ -233,7 +235,52 @@ static void beq(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (cpu_get_z_flag(cpu))
 	{
-		cpu->pc += get_memory_address(cpu, address_mode);
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
+	}
+}
+
+// Bit Test
+static void bit(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte result = cpu->a & cpu->memory.data[address];
+	cpu_set_z_flag(cpu, result);
+
+	cpu->p = cpu->memory.data[address] & 0b11000000;
+}
+
+// Branch if Minus
+static void bmi(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (cpu_get_n_flag(cpu))
+	{
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
+	}
+}
+
+// Branch if Not Equal
+static void bne(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (!cpu_get_z_flag(cpu))
+	{
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
+	}
+}
+
+// Branch if Positive
+static void bpl(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (!cpu_get_n_flag(cpu))
+	{
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
 	}
 }
 
@@ -293,35 +340,15 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(F0, beq, relative);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BIT opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(24, bit, zero_page);
+		OP(2C, bit, absolute);
 
-		case 0x24:
-			break;
-		case 0x2C:
-			break;
+		OP(30, bmi, relative);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BMI opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(D0, bne, relative);
 
-		case 0x30:
-			break;
+		OP(10, bpl, relative);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BNE opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xD0:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! BPL opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x10:
-			break;
 
 			///////////////////////////////////////////////////////////////////
 			// ! BRK opcodes
@@ -808,7 +835,7 @@ void cpu_set_c_flag(cpu* cpu, const unsigned char val)
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 0);
 }
 
-void cpu_set_z_flag(cpu* cpu, const char val)
+void cpu_set_z_flag(cpu* cpu, const unsigned char val)
 {
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 1);
 }

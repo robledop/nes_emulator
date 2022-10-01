@@ -75,7 +75,7 @@ bool cpu_get_v_flag(const cpu* cpu);
 bool cpu_get_n_flag(const cpu* cpu);
 
 void cpu_set_c_flag(cpu* cpu, const unsigned char val);
-void cpu_set_z_flag(cpu* cpu, const char val);
+void cpu_set_z_flag(cpu* cpu, const unsigned char val);
 void cpu_set_i_flag(cpu* cpu, const char val);
 void cpu_set_d_flag(cpu* cpu, const char val);
 void cpu_set_b_flag(cpu* cpu, const char val);
