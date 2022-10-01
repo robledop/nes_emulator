@@ -136,6 +136,29 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 	return 0;
 }
 
+static void cpu_stack_push_16(cpu* cpu, const word val)
+{
+	cpu->memory.data[STACK_BASE + cpu->sp] = (val >> 8) & 0xFF;
+	cpu->memory.data[STACK_BASE + (cpu->sp - 1)] = val & 0xFF;
+	cpu->sp -= 2;
+}
+
+static void cpu_stack_push_8(cpu* cpu, const byte val)
+{
+	cpu->memory.data[STACK_BASE + cpu->sp--] = val;
+}
+
+static word cpu_stack_pop_16(cpu* cpu)
+{
+	const word result = cpu->memory.data[STACK_BASE + ((cpu->sp + 1) & 0xFF)] | cpu->memory.data[STACK_BASE + (((cpu->sp + 2) & 0xFF) << 8)];
+	cpu->sp += 2;
+	return result;
+}
+
+static byte cpu_stack_pop_8(cpu* cpu)
+{
+	return cpu->memory.data[STACK_BASE + ++cpu->sp];
+}
 
 static void lda(cpu* cpu, const address_mode address_mode)
 {
@@ -182,7 +205,7 @@ static void adc(cpu* cpu, const address_mode address_mode)
 }
 
 // Logical AND
-static void and (cpu* cpu, const address_mode address_mode)
+static void AND(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
@@ -284,6 +307,73 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 	}
 }
 
+// Force Interrupt
+static void brk(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+
+	cpu->pc++;
+	cpu_stack_push_16(cpu, cpu->pc);
+	cpu_stack_push_8(cpu, cpu->p | BREAK_FLAG);
+	cpu_set_b_flag(cpu, 1);
+
+	cpu->pc = cpu->memory.data[0xFFFE] | (word)(cpu->memory.data[0xFFFF] << 8);
+}
+
+// Branch if Overflow Clear
+static void bvc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (!cpu_get_v_flag(cpu))
+	{
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
+	}
+}
+
+// Branch if Overflow Set
+static void bvs(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (cpu_get_v_flag(cpu))
+	{
+		const word address = get_memory_address(cpu, address_mode);
+		cpu->pc += cpu->memory.data[address];
+	}
+}
+
+// Clear Carry Flag
+static void clc(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_set_c_flag(cpu, 0);
+}
+
+// Clear Decimal Mode
+static void cld(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_set_d_flag(cpu, 0);
+}
+
+// Clear Interrupt Disable
+static void cli(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_set_i_flag(cpu, 0);
+}
+
+// Clear Overflow Flag
+static void clv(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_set_v_flag(cpu, 0);
+}
+
 // https://www.nesdev.org/obelisk-6502-guide/reference.html
 void cpu_exec(cpu* cpu, const byte instruction)
 {
@@ -319,14 +409,14 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		OP(61, adc, indexed_indirect);
 		OP(71, adc, indirect_indexed);
 
-		OP(29, and, immediate);
-		OP(25, and, zero_page);
-		OP(35, and, zero_page_x);
-		OP(2D, and, absolute);
-		OP(3D, and, absolute_x);
-		OP(39, and, absolute_y);
-		OP(21, and, indexed_indirect);
-		OP(31, and, indirect_indexed);
+		OP(29, AND, immediate);
+		OP(25, AND, zero_page);
+		OP(35, AND, zero_page_x);
+		OP(2D, AND, absolute);
+		OP(3D, AND, absolute_x);
+		OP(39, AND, absolute_y);
+		OP(21, AND, indexed_indirect);
+		OP(31, AND, indirect_indexed);
 
 		OP(0A, asl, accumulator);
 		OP(06, asl, zero_page);
@@ -349,55 +439,19 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(10, bpl, relative);
 
+		OP(00, brk, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BRK opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(50, bvc, relative);
 
-		case 0x00:
-			break;
+		OP(70, bvs, relative);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BVC opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(18, clc, implicit);
 
-		case 0x50:
-			break;
+		OP(d8, cld, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! BVS opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(58, cli, implicit);
 
-		case 0x70:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CLC opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x18:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CLD opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xd8:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CLI opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x58:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CLV opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xB8:
-			break;
+		OP(B8, clv, implicit);
 
 			///////////////////////////////////////////////////////////////////
 			// ! CMP opcodes
