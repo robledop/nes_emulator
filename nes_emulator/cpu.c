@@ -374,6 +374,42 @@ static void clv(cpu* cpu, const address_mode address_mode)
 	cpu_set_v_flag(cpu, 0);
 }
 
+// Compare
+static void cmp(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+
+		cpu_set_c_flag(cpu, cpu->a >= memory ? 1 : 0);
+		cpu_set_z_flag(cpu, cpu->a == memory ? 1 : 0);
+		cpu_set_n_flag(cpu, cpu->a < memory ? 1 : 0);
+}
+
+// Compare X Register
+static void cpx(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+
+	cpu_set_c_flag(cpu, cpu->x >= memory ? 1 : 0);
+	cpu_set_z_flag(cpu, cpu->x == memory ? 1 : 0);
+	cpu_set_n_flag(cpu, cpu->x < memory ? 1 : 0);
+}
+
+// Compare Y Register
+static void cpy(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+
+	cpu_set_c_flag(cpu, cpu->y >= memory ? 1 : 0);
+	cpu_set_z_flag(cpu, cpu->y == memory ? 1 : 0);
+	cpu_set_n_flag(cpu, cpu->y < memory ? 1 : 0);
+}
+
 // https://www.nesdev.org/obelisk-6502-guide/reference.html
 void cpu_exec(cpu* cpu, const byte instruction)
 {
@@ -453,48 +489,23 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(B8, clv, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! CMP opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(C9, cmp, immediate);
+		OP(C5, cmp, zero_page);
+		OP(D5, cmp, zero_page_x);
+		OP(CD, cmp, absolute);
+		OP(DD, cmp, absolute_x);
+		OP(D9, cmp, absolute_y);
+		OP(C1, cmp, indexed_indirect);
+		OP(D1, cmp, indirect_indexed);
 
-		case 0xC9:
-			break;
-		case 0xC5:
-			break;
-		case 0xD5:
-			break;
-		case 0xCD:
-			break;
-		case 0xDD:
-			break;
-		case 0xD9:
-			break;
-		case 0xC1:
-			break;
-		case 0xD1:
-			break;
+		OP(E0, cpx, immediate);
+		OP(E4, cpx, zero_page);
+		OP(EC, cpx, absolute);
 
-			///////////////////////////////////////////////////////////////////
-			// ! CPX opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(C0, cpy, immediate);
+		OP(C4, cpy, zero_page);
+		OP(CC, cpy, absolute);
 
-		case 0xE0:
-			break;
-		case 0xE4:
-			break;
-		case 0xEC:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CPY opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xC0:
-			break;
-		case 0xC4:
-			break;
-		case 0xCC:
-			break;
 
 			///////////////////////////////////////////////////////////////////
 			// ! DEC opcodes
