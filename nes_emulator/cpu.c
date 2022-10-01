@@ -512,7 +512,7 @@ static void lsr(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0x00000001));
+		cpu_set_c_flag(cpu, (cpu->a & 0b00000001));
 		cpu->a >>= 1;
 		calc_negative(cpu, cpu->a);
 		calc_zero(cpu, cpu->a);
@@ -520,7 +520,7 @@ static void lsr(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = cpu->memory.data[address];
-		cpu_set_c_flag(cpu, (memory & 0x10000000));
+		cpu_set_c_flag(cpu, (memory & 0b10000000));
 		cpu->memory.data[address] >>= 1;
 		calc_negative(cpu, cpu->memory.data[address]);
 		calc_zero(cpu, cpu->memory.data[address]);
@@ -533,6 +533,222 @@ static void nop(cpu* cpu, const address_mode address_mode)
 	assert(address_mode == implicit);
 	cpu->pc++;
 }
+
+// Logical Inclusive OR
+static void ora(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->a |= cpu->memory.data[address];
+	calc_negative(cpu, cpu->a);
+	calc_zero(cpu, cpu->a);
+}
+
+// Push Accumulator
+static void pha(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_stack_push_8(cpu, cpu->a);
+}
+
+// Push Processor Status
+static void php(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu_stack_push_8(cpu, cpu->p);
+}
+
+// Pull Accumulator
+static void pla(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->a = cpu_stack_pop_8(cpu);
+}
+
+// Pull Processor Status
+static void plp(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->p = cpu_stack_pop_8(cpu);
+}
+
+// Rotate Left
+static void rol(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (address_mode == accumulator)
+	{
+		cpu_set_c_flag(cpu, (cpu->a & 0b10000000));
+		cpu->a <<= 1;
+		cpu->a |= cpu_get_c_flag(cpu) ? 1 : 0;
+	}
+	else {
+		const word address = get_memory_address(cpu, address_mode);
+		cpu_set_c_flag(cpu, (cpu->memory.data[address] & 0b10000000));
+		cpu->memory.data[address] <<= 1;
+		cpu->memory.data[address] |= cpu_get_c_flag(cpu) ? 1 : 0;
+	}
+}
+
+//  Rotate Right
+static void ror(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (address_mode == accumulator)
+	{
+		cpu_set_c_flag(cpu, (cpu->a & 0b00000001));
+		cpu->a >>= 1;
+		cpu->a |= cpu_get_c_flag(cpu) ? 0b10000000 : 0;
+		calc_negative(cpu, cpu->a);
+		calc_zero(cpu, cpu->a);
+	}
+	else {
+		const word address = get_memory_address(cpu, address_mode);
+		const byte memory = cpu->memory.data[address];
+		cpu_set_c_flag(cpu, (memory & 0b10000000));
+		cpu->memory.data[address] >>= 1;
+		cpu->memory.data[address] |= cpu_get_c_flag(cpu) ? 0b10000000 : 0;
+		calc_negative(cpu, cpu->memory.data[address]);
+		calc_zero(cpu, cpu->memory.data[address]);
+	}
+}
+
+//  Return from Interrupt
+static void rti(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->p = cpu_stack_pop_8(cpu);
+	cpu->pc = cpu_stack_pop_8(cpu);
+}
+
+// Return from Subroutine
+static void rts(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc = cpu_stack_pop_8(cpu) - 1;
+}
+
+// Subtract with Carry
+static void sbc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+	const word result = ~(cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0));
+	calc_carry(cpu, result);
+	calc_overflow(cpu, result, memory);
+	calc_zero(cpu, (byte)result);
+	calc_negative(cpu, (byte)result);
+	cpu->a = (byte)result;
+}
+
+// Set Carry Flag
+static void sec(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu_set_c_flag(cpu, 1);
+}
+
+// Set Decimal Flag
+static void sed(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu_set_d_flag(cpu, 1);
+}
+
+// Set Interrupt Disable
+static void sei(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu_set_i_flag(cpu, 1);
+}
+
+// Store Accumulator
+static void sta(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->memory.data[address] = cpu->a;
+}
+
+// Store X Register
+static void stx(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->memory.data[address] = cpu->x;
+}
+
+// Store Y Register
+static void sty(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->memory.data[address] = cpu->y;
+}
+
+// Transfer Accumulator to X
+static void tax(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->x = cpu->a;
+	calc_zero(cpu, cpu->x);
+	calc_negative(cpu, cpu->x);
+}
+
+// Transfer Accumulator to Y
+static void tay(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->y = cpu->a;
+	calc_zero(cpu, cpu->y);
+	calc_negative(cpu, cpu->y);
+}
+
+// Transfer Stack Pointer to X
+static void tsx(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->x = cpu->sp;
+	calc_zero(cpu, cpu->x);
+	calc_negative(cpu, cpu->x);
+}
+
+// Transfer X to Accumulator
+static void txa(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->a = cpu->x;
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);
+}
+
+// Transfer X to Stack Pointer
+static void txs(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->sp = cpu->x;
+}
+
+// Transfer Y to Accumulator
+static void tya(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->a = cpu->y;
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);
+}
+
 
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html
@@ -654,7 +870,6 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		OP(EE, inc, absolute);
 		OP(FE, inc, absolute_x);
 
-
 		OP(E8, inx, implicit);
 
 		OP(C8, iny, implicit);
@@ -672,224 +887,81 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(EA, nop, implicit);
 
+		OP(09, ora, immediate);
+		OP(05, ora, zero_page);
+		OP(15, ora, zero_page_x);
+		OP(0D, ora, absolute);
+		OP(1D, ora, absolute_x);
+		OP(19, ora, absolute_y);
+		OP(01, ora, indexed_indirect);
+		OP(11, ora, indirect_indexed);
 
-			///////////////////////////////////////////////////////////////////
-			// ! ORA opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(48, pha, implicit);
 
-		case 0x09:
-			break;
-		case 0x05:
-			break;
-		case 0x15:
-			break;
-		case 0x0D:
-			break;
-		case 0x1D:
-			break;
-		case 0x19:
-			break;
-		case 0x01:
-			break;
-		case 0x11:
-			break;
+		OP(08, php, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! PHA opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(68, pha, implicit);
 
-		case 0x48:
-			break;
+		OP(28, plp, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! PHP opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(2A, rol, accumulator);
+		OP(26, rol, zero_page);
+		OP(36, rol, zero_page_x);
+		OP(2E, rol, absolute);
+		OP(3E, rol, absolute_x);
 
-		case 0x08:
-			break;
+		OP(6A, ror, accumulator);
+		OP(66, ror, zero_page);
+		OP(76, ror, zero_page_x);
+		OP(6E, ror, absolute);
+		OP(7E, ror, absolute_x);
 
-			///////////////////////////////////////////////////////////////////
-			// ! PLA opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(40, rti, implicit);
 
-		case 0x68:
-			break;
+		OP(60, rts, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! PLP opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(E9, sbc, immediate);
+		OP(E5, sbc, zero_page);
+		OP(F5, sbc, zero_page_x);
+		OP(ED, sbc, absolute);
+		OP(FD, sbc, absolute_x);
+		OP(F9, sbc, absolute_y);
+		OP(E1, sbc, indexed_indirect);
+		OP(F1, sbc, indirect_indexed);
 
-		case 0x28:
-			break;
+		OP(38, sec, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! ROL opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(F8, sed, implicit);
 
-		case 0x2A:
-			break;
-		case 0x26:
-			break;
-		case 0x36:
-			break;
-		case 0x2E:
-			break;
-		case 0x3E:
-			break;
+		OP(78, sei, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! ROR opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(85, sta, zero_page);
+		OP(95, sta, zero_page_x);
+		OP(8D, sta, absolute);
+		OP(9D, sta, absolute_x);
+		OP(99, sta, absolute_y);
+		OP(81, sta, indexed_indirect);
+		OP(91, sta, indirect_indexed);
 
-		case 0x6A:
-			break;
-		case 0x66:
-			break;
-		case 0x76:
-			break;
-		case 0x6E:
-			break;
-		case 0x7E:
-			break;
+		OP(86, stx, zero_page);
+		OP(96, stx, zero_page_y);
+		OP(8E, stx, absolute);
 
-			///////////////////////////////////////////////////////////////////
-			// ! RTI opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(84, sty, zero_page);
+		OP(94, sty, zero_page_x);
+		OP(8C, sty, absolute);
 
-		case 0x40:
-			break;
+		OP(AA, tax, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! RTS opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(A8, tay, implicit);
 
-		case 0x60:
-			break;
+		OP(BA, tsx, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! SBC opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(8A, txa, implicit);
 
-		case 0xE9:
-			break;
-		case 0xE5:
-			break;
-		case 0xF5:
-			break;
-		case 0xED:
-			break;
-		case 0xFD:
-			break;
-		case 0xF9:
-			break;
-		case 0xE1:
-			break;
-		case 0xF1:
-			break;
+		OP(9A, tsx, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! SEC opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x38:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! SED opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xF8:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! SEI opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x78:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! STA opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x85:
-			break;
-		case 0x95:
-			break;
-		case 0x8D:
-			break;
-		case 0x9D:
-			break;
-		case 0x99:
-			break;
-		case 0x81:
-			break;
-		case 0x91:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! STX opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x86:
-			break;
-		case 0x96:
-			break;
-		case 0x8E:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! STY opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x84:
-			break;
-		case 0x94:
-			break;
-		case 0x8C:
-
-			///////////////////////////////////////////////////////////////////
-			// ! TAX opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xAA:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! TAY opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xA8:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! TSX opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xBA:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! TXA opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x8A:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! TXS opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x9A:
-			break;
-
-
-			///////////////////////////////////////////////////////////////////
-			// ! TYA opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x98:
-			break;
+		OP(98, tya, implicit);
 
 		default:
 			printf("%s", "Unsupported opcode");
