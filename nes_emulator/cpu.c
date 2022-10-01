@@ -410,6 +410,36 @@ static void cpy(cpu* cpu, const address_mode address_mode)
 	cpu_set_n_flag(cpu, cpu->y < memory ? 1 : 0);
 }
 
+// Decrement Memory
+static void dec(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->memory.data[address] -= 1;
+	calc_negative(cpu, cpu->memory.data[address]);
+	calc_zero(cpu, cpu->memory.data[address]);
+}
+
+// Decrement X Register
+static void dex(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->x -= 1;
+	calc_negative(cpu, cpu->x);
+	calc_zero(cpu, cpu->x);
+}
+
+// Decrement Y Register
+static void dey(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->y -= 1;
+	calc_negative(cpu, cpu->y);
+	calc_zero(cpu, cpu->y);
+}
+
 // https://www.nesdev.org/obelisk-6502-guide/reference.html
 void cpu_exec(cpu* cpu, const byte instruction)
 {
@@ -506,33 +536,14 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		OP(C4, cpy, zero_page);
 		OP(CC, cpy, absolute);
 
+		OP(C6, dec, zero_page);
+		OP(D6, dec, zero_page_x);
+		OP(CE, dec, absolute);
+		OP(DE, dec, absolute_x);
 
-			///////////////////////////////////////////////////////////////////
-			// ! DEC opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(CA, dex, implicit);
 
-		case 0xC6:
-			break;
-		case 0xD6:
-			break;
-		case 0xCE:
-			break;
-		case 0xDE:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! DEX opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xCA:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! CEY opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x88:
-			break;
+		OP(88, dey, implicit);
 
 			///////////////////////////////////////////////////////////////////
 			// ! EOR opcodes
