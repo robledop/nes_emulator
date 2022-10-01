@@ -440,6 +440,101 @@ static void dey(cpu* cpu, const address_mode address_mode)
 	calc_zero(cpu, cpu->y);
 }
 
+// Exclusive OR
+static void eor(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	const byte memory = cpu->memory.data[address];
+	cpu->a ^= memory;
+	calc_negative(cpu, cpu->a);
+	calc_zero(cpu, cpu->a);
+}
+
+// Increment Memory
+static void inc(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->memory.data[address] += 1;
+	calc_negative(cpu, cpu->memory.data[address]);
+	calc_zero(cpu, cpu->memory.data[address]);
+}
+
+// Increment X Register
+static void inx(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->x += 1;
+	calc_negative(cpu, cpu->x);
+	calc_zero(cpu, cpu->x);
+}
+
+// Increment Y Register
+static void iny(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+	cpu->y += 1;
+	calc_negative(cpu, cpu->y);
+	calc_zero(cpu, cpu->y);
+}
+
+// Jump
+static void jmp(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->pc = cpu->memory.data[address];
+
+	// TODO: An original 6502 has does not correctly fetch the target address
+	// if the indirect vector falls on a page boundary (e.g. $xxFF where xx is
+	// any value from $00 to $FF). In this case fetches the LSB from $xxFF as
+	// expected but takes the MSB from $xx00. This is fixed in some later chips
+	// like the 65SC02 so for compatibility always ensure the indirect vector is
+	// not at the end of the page.
+}
+
+// Jump to Subroutine
+static void jsr(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == absolute);
+	cpu->pc++;
+	cpu_stack_push_16(cpu, cpu->pc - 1);
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->pc = cpu->memory.data[address];
+}
+
+// Logical Shift Right
+static void lsr(cpu* cpu, const address_mode address_mode)
+{
+	cpu->pc++;
+	if (address_mode == accumulator)
+	{
+		cpu_set_c_flag(cpu, (cpu->a & 0x00000001));
+		cpu->a >>= 1;
+		calc_negative(cpu, cpu->a);
+		calc_zero(cpu, cpu->a);
+	}
+	else {
+		const word address = get_memory_address(cpu, address_mode);
+		const byte memory = cpu->memory.data[address];
+		cpu_set_c_flag(cpu, (memory & 0x10000000));
+		cpu->memory.data[address] >>= 1;
+		calc_negative(cpu, cpu->memory.data[address]);
+		calc_zero(cpu, cpu->memory.data[address]);
+	}
+}
+
+// No Operation
+static void nop(cpu* cpu, const address_mode address_mode)
+{
+	assert(address_mode == implicit);
+	cpu->pc++;
+}
+
+
 // https://www.nesdev.org/obelisk-6502-guide/reference.html
 void cpu_exec(cpu* cpu, const byte instruction)
 {
@@ -545,91 +640,38 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(88, dey, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! EOR opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(49, eor, immediate);
+		OP(45, eor, zero_page);
+		OP(55, eor, zero_page_x);
+		OP(4D, eor, absolute);
+		OP(5D, eor, absolute_x);
+		OP(59, eor, absolute_y);
+		OP(41, eor, indexed_indirect);
+		OP(51, eor, indirect_indexed);
 
-		case 0x49:
-			break;
-		case 0x45:
-			break;
-		case 0x55:
-			break;
-		case 0x4D:
-			break;
-		case 0x5D:
-			break;
-		case 0x59:
-			break;
-		case 0x41:
-			break;
-		case 0x51:
-			break;
+		OP(E6, inc, zero_page);
+		OP(F6, inc, zero_page_x);
+		OP(EE, inc, absolute);
+		OP(FE, inc, absolute_x);
 
-			///////////////////////////////////////////////////////////////////
-			// ! INC opcodes
-			///////////////////////////////////////////////////////////////////
 
-		case 0xE6:
-			break;
-		case 0xF6:
-			break;
-		case 0xEE:
-			break;
-		case 0xFE:
-			break;
+		OP(E8, inx, implicit);
 
-			///////////////////////////////////////////////////////////////////
-			// ! INX opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(C8, iny, implicit);
 
-		case 0xE8:
-			break;
+		OP(4C, jmp, absolute);
+		OP(6C, jmp, indirect);
 
-			///////////////////////////////////////////////////////////////////
-			// ! INY opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(20, jsr, absolute);
 
-		case 0xC8:
-			break;
+		OP(4A, lsr, accumulator);
+		OP(46, lsr, zero_page);
+		OP(56, lsr, zero_page_x);
+		OP(4E, lsr, absolute);
+		OP(5E, lsr, absolute_x);
 
-			///////////////////////////////////////////////////////////////////
-			// ! JMP opcodes
-			///////////////////////////////////////////////////////////////////
+		OP(EA, nop, implicit);
 
-		case 0x4C:
-			break;
-		case 0x6C:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! JSR opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x20:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! LSR opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0x4A:
-			break;
-		case 0x46:
-			break;
-		case 0x56:
-			break;
-		case 0x4E:
-			break;
-		case 0x5E:
-			break;
-
-			///////////////////////////////////////////////////////////////////
-			// ! NOP opcodes
-			///////////////////////////////////////////////////////////////////
-
-		case 0xEA:
-			break;
 
 			///////////////////////////////////////////////////////////////////
 			// ! ORA opcodes
