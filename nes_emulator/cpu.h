@@ -14,6 +14,8 @@
 #define OVERFLOW_FLAG  0x40
 #define SIGN_FLAG      0x80
 
+#define SIGN_BIT     0x80
+
 typedef unsigned char byte;
 typedef  unsigned short word;
 typedef enum address_mode

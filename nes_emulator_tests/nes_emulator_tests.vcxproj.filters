@@ -42,4 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Users\Robledo\Downloads\cpu_dummy_reads.nes">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

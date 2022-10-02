@@ -181,6 +181,9 @@
       <Project>{644aa379-f5e6-4232-a3e1-a0829ec1fc1f}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Users\Robledo\Downloads\cpu_dummy_reads.nes" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

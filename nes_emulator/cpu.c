@@ -64,25 +64,25 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			break;
 
 		case immediate:
-			return cpu->pc;
+			return cpu->pc++;
 
 		case zero_page:
-			return cpu->memory.data[cpu->pc];
+			return cpu->memory.data[cpu->pc++];
 
 		case zero_page_x:
-			return cpu->memory.data[cpu->pc] + cpu->x;
+			return cpu->memory.data[cpu->pc++] + cpu->x;
 
 		case zero_page_y:
-			return cpu->memory.data[cpu->pc] + cpu->y;
+			return cpu->memory.data[cpu->pc++] + cpu->y;
 
 		case relative:
-			return cpu->memory.data[cpu->pc];
+			return cpu->memory.data[cpu->pc++];
 
 		case absolute:
 		{
 			const byte low_byte = cpu->memory.data[cpu->pc];
 			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
+			const byte high_byte = cpu->memory.data[cpu->pc++];
 			return  ((word)(high_byte << 8)) | low_byte;
 		}
 
@@ -90,7 +90,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 		{
 			const byte low_byte = cpu->memory.data[cpu->pc];
 			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
+			const byte high_byte = cpu->memory.data[cpu->pc++];
 			word address = ((word)(high_byte << 8)) | low_byte;
 			address += cpu->x;
 			return address;
@@ -100,7 +100,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 		{
 			const byte low_byte = cpu->memory.data[cpu->pc];
 			cpu->pc++;
-			const byte high_byte = cpu->memory.data[cpu->pc];
+			const byte high_byte = cpu->memory.data[cpu->pc++];
 			word address = ((word)(high_byte << 8)) | low_byte;
 			address += cpu->y;
 			return address;
@@ -111,7 +111,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indexed_indirect:
 		{
-			const byte vector = cpu->memory.data[cpu->pc] + cpu->x;
+			const byte vector = cpu->memory.data[cpu->pc++] + cpu->x;
 
 			const byte low_byte = cpu->memory.data[vector];
 			const byte high_byte = cpu->memory.data[vector + 1];
@@ -120,7 +120,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indirect_indexed:
 		{
-			const byte vector = cpu->memory.data[cpu->pc];
+			const byte vector = cpu->memory.data[cpu->pc++];
 
 			const byte low_byte = cpu->memory.data[vector];
 			const byte high_byte = cpu->memory.data[vector + 1];
@@ -165,6 +165,7 @@ static void lda(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->a = cpu->memory.data[address];
+	printf("LDA %x\n", cpu->a);
 
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
@@ -175,7 +176,7 @@ static void ldx(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->x = cpu->memory.data[address];
-
+	printf("LDX %x\n", cpu->x);
 	calc_zero(cpu, cpu->x);
 	calc_negative(cpu, cpu->x);
 }
@@ -185,7 +186,7 @@ static void ldy(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->y = cpu->memory.data[address];
-
+	printf("LDY %x\n", cpu->y);
 	calc_zero(cpu, cpu->y);
 	calc_negative(cpu, cpu->y);
 }
@@ -202,6 +203,7 @@ static void adc(cpu* cpu, const address_mode address_mode)
 	calc_zero(cpu, (byte)result);
 	calc_negative(cpu, (byte)result);
 	cpu->a = (byte)result;
+	printf("ADC %x\n",memory);
 }
 
 // Logical AND
@@ -212,6 +214,8 @@ static void AND(cpu* cpu, const address_mode address_mode)
 	cpu->a &= cpu->memory.data[address];
 	calc_negative(cpu, cpu->a);
 	calc_zero(cpu, cpu->a);
+	printf("AND %x\n", cpu->memory.data[address]);
+	cpu->pc++;
 }
 
 // Arithmetic Shift Left
@@ -222,11 +226,13 @@ static void asl(cpu* cpu, const address_mode address_mode)
 	{
 		cpu_set_c_flag(cpu, (cpu->a & 0x10000000));
 		cpu->a <<= 1;
+		puts("ASL");
 	}
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		cpu_set_c_flag(cpu, (cpu->memory.data[address] & 0x10000000));
 		cpu->memory.data[address] <<= 1;
+		printf("ASL %x\n", address);
 	}
 }
 
@@ -237,8 +243,14 @@ static void bcc(cpu* cpu, const address_mode address_mode)
 	if (!cpu_get_c_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
 	}
+	else
+	{
+		cpu->pc++;
+	}
+
+	printf("BCC %x\n", cpu->pc);
 }
 
 // Branch if Carry Set
@@ -248,7 +260,11 @@ static void bcs(cpu* cpu, const address_mode address_mode)
 	if (cpu_get_c_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 }
 
@@ -259,7 +275,11 @@ static void beq(cpu* cpu, const address_mode address_mode)
 	if (cpu_get_z_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 }
 
@@ -281,7 +301,11 @@ static void bmi(cpu* cpu, const address_mode address_mode)
 	if (cpu_get_n_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 }
 
@@ -292,8 +316,13 @@ static void bne(cpu* cpu, const address_mode address_mode)
 	if (!cpu_get_z_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
 	}
+	else
+	{
+		cpu->pc++;
+	}
+	printf("BNE %x\n", cpu->pc);
 }
 
 // Branch if Positive
@@ -303,7 +332,11 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 	if (!cpu_get_n_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 }
 
@@ -327,7 +360,7 @@ static void bvc(cpu* cpu, const address_mode address_mode)
 	if (!cpu_get_v_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
 	}
 }
 
@@ -338,7 +371,7 @@ static void bvs(cpu* cpu, const address_mode address_mode)
 	if (cpu_get_v_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
-		cpu->pc += cpu->memory.data[address];
+		cpu->pc += (char)address;
 	}
 }
 
@@ -353,6 +386,7 @@ static void clc(cpu* cpu, const address_mode address_mode)
 // Clear Decimal Mode
 static void cld(cpu* cpu, const address_mode address_mode)
 {
+	puts("CLD");
 	assert(address_mode == implicit);
 	cpu->pc++;
 	cpu_set_d_flag(cpu, 0);
@@ -428,6 +462,7 @@ static void dex(cpu* cpu, const address_mode address_mode)
 	cpu->x -= 1;
 	calc_negative(cpu, cpu->x);
 	calc_zero(cpu, cpu->x);
+	puts("DEX");
 }
 
 // Decrement Y Register
@@ -459,6 +494,7 @@ static void inc(cpu* cpu, const address_mode address_mode)
 	cpu->memory.data[address] += 1;
 	calc_negative(cpu, cpu->memory.data[address]);
 	calc_zero(cpu, cpu->memory.data[address]);
+	printf("INC %x\n", address);
 }
 
 // Increment X Register
@@ -484,9 +520,10 @@ static void iny(cpu* cpu, const address_mode address_mode)
 // Jump
 static void jmp(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
+	cpu->pc++;
 	cpu->pc = cpu->memory.data[address];
+	puts("JMP");
 
 	// TODO: An original 6502 has does not correctly fetch the target address
 	// if the indirect vector falls on a page boundary (e.g. $xxFF where xx is
@@ -503,7 +540,8 @@ static void jsr(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	cpu_stack_push_16(cpu, cpu->pc - 1);
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->pc = cpu->memory.data[address];
+	cpu->pc = address;
+	printf("JSR %x\n", address);
 }
 
 // Logical Shift Right
@@ -585,12 +623,14 @@ static void rol(cpu* cpu, const address_mode address_mode)
 		cpu_set_c_flag(cpu, (cpu->a & 0b10000000));
 		cpu->a <<= 1;
 		cpu->a |= cpu_get_c_flag(cpu) ? 1 : 0;
+		puts("ROL");
 	}
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		cpu_set_c_flag(cpu, (cpu->memory.data[address] & 0b10000000));
 		cpu->memory.data[address] <<= 1;
 		cpu->memory.data[address] |= cpu_get_c_flag(cpu) ? 1 : 0;
+		printf("ROL %x\n", address);
 	}
 }
 
@@ -629,7 +669,9 @@ static void rti(cpu* cpu, const address_mode address_mode)
 static void rts(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc = cpu_stack_pop_8(cpu) - 1;
+	const word value = cpu_stack_pop_16(cpu) - 1;
+	cpu->pc = value;
+	puts("RTS");
 }
 
 // Subtract with Carry
@@ -644,19 +686,24 @@ static void sbc(cpu* cpu, const address_mode address_mode)
 	calc_zero(cpu, (byte)result);
 	calc_negative(cpu, (byte)result);
 	cpu->a = (byte)result;
+	
+	printf("SBC %x\n", address);
 }
 
 // Set Carry Flag
 static void sec(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
+	cpu->pc++;
 	cpu_set_c_flag(cpu, 1);
+	puts("SEC");
 }
 
 // Set Decimal Flag
 static void sed(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
+	cpu->pc++;
 	cpu_set_d_flag(cpu, 1);
 }
 
@@ -664,6 +711,7 @@ static void sed(cpu* cpu, const address_mode address_mode)
 static void sei(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
+	cpu->pc++;
 	cpu_set_i_flag(cpu, 1);
 }
 
@@ -673,6 +721,7 @@ static void sta(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->memory.data[address] = cpu->a;
+	printf("STA %x\n", cpu->memory.data[address]);
 }
 
 // Store X Register
@@ -689,6 +738,7 @@ static void sty(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->memory.data[address] = cpu->y;
+	printf("STY %x\n", address);
 }
 
 // Transfer Accumulator to X
@@ -709,6 +759,7 @@ static void tay(cpu* cpu, const address_mode address_mode)
 	cpu->y = cpu->a;
 	calc_zero(cpu, cpu->y);
 	calc_negative(cpu, cpu->y);
+	puts("TAY");
 }
 
 // Transfer Stack Pointer to X
@@ -719,6 +770,7 @@ static void tsx(cpu* cpu, const address_mode address_mode)
 	cpu->x = cpu->sp;
 	calc_zero(cpu, cpu->x);
 	calc_negative(cpu, cpu->x);
+	puts("TSX");
 }
 
 // Transfer X to Accumulator
@@ -737,6 +789,7 @@ static void txs(cpu* cpu, const address_mode address_mode)
 	assert(address_mode == implicit);
 	cpu->pc++;
 	cpu->sp = cpu->x;
+	puts("TXS");
 }
 
 // Transfer Y to Accumulator
@@ -959,12 +1012,13 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(8A, txa, implicit);
 
-		OP(9A, tsx, implicit);
+		OP(9A, txs, implicit);
 
 		OP(98, tya, implicit);
 
 		default:
-			printf("%s", "Unsupported opcode");
+			cpu->pc++;
+			printf("Unsupported opcode:%x\nPC:%x\n", instruction,cpu->pc);
 	}
 }
 
