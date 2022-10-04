@@ -520,9 +520,9 @@ static void iny(cpu* cpu, const address_mode address_mode)
 // Jump
 static void jmp(cpu* cpu, const address_mode address_mode)
 {
-	const word address = get_memory_address(cpu, address_mode);
 	cpu->pc++;
-	cpu->pc = cpu->memory.data[address];
+	const word address = get_memory_address(cpu, address_mode);
+	cpu->pc = address;
 	puts("JMP");
 
 	// TODO: An original 6502 has does not correctly fetch the target address
@@ -713,6 +713,7 @@ static void sei(cpu* cpu, const address_mode address_mode)
 	assert(address_mode == implicit);
 	cpu->pc++;
 	cpu_set_i_flag(cpu, 1);
+	puts("SEI");
 }
 
 // Store Accumulator
@@ -953,7 +954,7 @@ void cpu_exec(cpu* cpu, const byte instruction)
 
 		OP(08, php, implicit);
 
-		OP(68, pha, implicit);
+		OP(68, pla, implicit);
 
 		OP(28, plp, implicit);
 

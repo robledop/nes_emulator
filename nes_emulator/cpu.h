@@ -2,19 +2,19 @@
 
 #include <stdbool.h>
 
-#define MAX_MEMORY 65536
-#define STACK_BASE 0x100
+#define MAX_MEMORY		65536
+#define STACK_BASE		0x100
 
-#define CARRY_FLAG     0x01
-#define ZERO_FLAG      0x02
-#define INTERRUPT_FLAG 0x04
-#define DECIMAL_FLAG   0x08
-#define BREAK_FLAG     0x10
-#define CONSTANT_FLAG  0x20
-#define OVERFLOW_FLAG  0x40
-#define SIGN_FLAG      0x80
+#define CARRY_FLAG		0x01
+#define ZERO_FLAG		0x02
+#define INTERRUPT_FLAG	0x04
+#define DECIMAL_FLAG	0x08
+#define BREAK_FLAG		0x10
+#define CONSTANT_FLAG	0x20
+#define OVERFLOW_FLAG	0x40
+#define SIGN_FLAG		0x80
 
-#define SIGN_BIT     0x80
+#define SIGN_BIT		0x80
 
 typedef unsigned char byte;
 typedef  unsigned short word;
