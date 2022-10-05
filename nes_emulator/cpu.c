@@ -150,7 +150,7 @@ static void cpu_stack_push_8(cpu* cpu, const byte val)
 
 static word cpu_stack_pop_16(cpu* cpu)
 {
-	const word result = cpu->memory.data[STACK_BASE + ((cpu->sp + 1) & 0xFF)] | cpu->memory.data[STACK_BASE + (((cpu->sp + 2) & 0xFF) << 8)];
+	const word result = (word)(cpu->memory.data[STACK_BASE + (cpu->sp + 2)] << 8) | (word)cpu->memory.data[STACK_BASE + (cpu->sp + 1)];
 	cpu->sp += 2;
 	return result;
 }
@@ -292,6 +292,8 @@ static void bit(cpu* cpu, const address_mode address_mode)
 	cpu_set_z_flag(cpu, result);
 
 	cpu->p = cpu->memory.data[address] & 0b11000000;
+
+	printf("BIT %x\n", address);
 }
 
 // Branch if Minus
@@ -333,6 +335,7 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 	{
 		const word address = get_memory_address(cpu, address_mode);
 		cpu->pc += (char)address;
+		printf("BPL %x\n", address);
 	}
 	else
 	{
@@ -442,6 +445,7 @@ static void cpy(cpu* cpu, const address_mode address_mode)
 	cpu_set_c_flag(cpu, cpu->y >= memory ? 1 : 0);
 	cpu_set_z_flag(cpu, cpu->y == memory ? 1 : 0);
 	cpu_set_n_flag(cpu, cpu->y < memory ? 1 : 0);
+	printf("CPY %x\n", memory);
 }
 
 // Decrement Memory
@@ -505,6 +509,7 @@ static void inx(cpu* cpu, const address_mode address_mode)
 	cpu->x += 1;
 	calc_negative(cpu, cpu->x);
 	calc_zero(cpu, cpu->x);
+	puts("INX");
 }
 
 // Increment Y Register
@@ -515,6 +520,7 @@ static void iny(cpu* cpu, const address_mode address_mode)
 	cpu->y += 1;
 	calc_negative(cpu, cpu->y);
 	calc_zero(cpu, cpu->y);
+	puts("INY");
 }
 
 // Jump
@@ -538,7 +544,7 @@ static void jsr(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == absolute);
 	cpu->pc++;
-	cpu_stack_push_16(cpu, cpu->pc - 1);
+	cpu_stack_push_16(cpu, cpu->pc + 2);
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->pc = address;
 	printf("JSR %x\n", address);
@@ -669,7 +675,7 @@ static void rti(cpu* cpu, const address_mode address_mode)
 static void rts(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	const word value = cpu_stack_pop_16(cpu) - 1;
+	const word value = cpu_stack_pop_16(cpu);
 	cpu->pc = value;
 	puts("RTS");
 }
@@ -722,7 +728,7 @@ static void sta(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->memory.data[address] = cpu->a;
-	printf("STA %x\n", cpu->memory.data[address]);
+	printf("STA %x\n", address);
 }
 
 // Store X Register
@@ -731,6 +737,7 @@ static void stx(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->memory.data[address] = cpu->x;
+	printf("STX %x\n", address);
 }
 
 // Store Y Register
@@ -782,6 +789,7 @@ static void txa(cpu* cpu, const address_mode address_mode)
 	cpu->a = cpu->x;
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
+	puts("TXA");
 }
 
 // Transfer X to Stack Pointer
@@ -801,6 +809,7 @@ static void tya(cpu* cpu, const address_mode address_mode)
 	cpu->a = cpu->y;
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
+	puts("TYA");
 }
 
 

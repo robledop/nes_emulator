@@ -101,6 +101,9 @@ int main(const int argc, char** argv)
 	memcpy(&cpu.memory.data[0x8000], &rom[16], 0x8000);
 
 	cpu_init(&cpu);
+
+	cpu.memory.data[0x2002] = 0xFF; // FOR TESTING
+
 	while (true)
 	{
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
