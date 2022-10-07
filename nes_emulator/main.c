@@ -4,10 +4,11 @@
 #include <stdint.h>
 
 #include "cpu.h"
+#include "ppu.h"
 
 int load_file(char** text, const char* filename, uint32_t* size_out);
 
-void print_header_info(const char* rom)
+void print_header_info(const char* rom, word* prg_size_out, word* chr_size_out)
 {
 	printf("%s:", "Header");
 	for (int i = 0; i < 4; ++i)
@@ -15,8 +16,10 @@ void print_header_info(const char* rom)
 		putchar(rom[i]);
 	}
 	puts("");
-	printf("PRG-ROM size: %d bytes\n", rom[4] * 1024 * 16);
-	printf("CHR-ROM size: %d bytes\n", rom[5] * 1024 * 8);
+	*prg_size_out = (word)rom[4] * 1024 * 16;
+	*chr_size_out = (word)rom[5] * 1024 * 8;
+	printf("PRG-ROM size: %d bytes\n", *prg_size_out);
+	printf("CHR-ROM size: %d bytes\n", *chr_size_out);
 
 	const byte flags_6 = rom[6];
 	if (flags_6 & 0b00000001)
@@ -91,23 +94,28 @@ int main(const int argc, char** argv)
 		free(rom);
 		return result;
 	}
+	word prg_size;
+	word chr_size;
 
 	cpu cpu;
 	cpu_clear_memory(&cpu);
 
-	print_header_info(rom);
+	print_header_info(rom, &prg_size, &chr_size);
 
 
-	memcpy(&cpu.memory.data[0x8000], &rom[16], 0x8000);
+	memcpy(&cpu.memory.data[0x8000], &rom[16], prg_size);
 
-	cpu_init(&cpu);
+	cpu_init(&cpu, prg_size);
+	memcpy(cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 
-	cpu.memory.data[0x2002] = 0xFF; // FOR TESTING
+	cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
+	
 
 	while (true)
 	{
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
 	}
+	render_background(&cpu.ppu);
 
 	free(rom);
 

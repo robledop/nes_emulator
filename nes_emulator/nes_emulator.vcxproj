@@ -142,9 +142,13 @@
   <ItemGroup>
     <ClCompile Include="cpu.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="ppu.c" />
+    <ClCompile Include="ppu.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
     <ClInclude Include="cpu.h" />
+    <ClInclude Include="nes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -21,9 +21,21 @@
     <ClCompile Include="cpu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ppu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ppu.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

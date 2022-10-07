@@ -2,6 +2,9 @@
 
 #include <stdbool.h>
 
+#include "config.h"
+#include "ppu.h"
+
 #define MAX_MEMORY		65536
 #define STACK_BASE		0x100
 
@@ -16,24 +19,7 @@
 
 #define SIGN_BIT		0x80
 
-typedef unsigned char byte;
-typedef  unsigned short word;
-typedef enum address_mode
-{
-	implicit,
-	accumulator,
-	immediate,
-	zero_page,
-	zero_page_x,
-	zero_page_y,
-	relative,
-	absolute,
-	absolute_x,
-	absolute_y,
-	indirect,
-	indexed_indirect,
-	indirect_indexed
-} address_mode;
+
 
 typedef struct
 {
@@ -67,6 +53,7 @@ typedef struct
 	word pc;
 
 	memory memory;
+	ppu ppu;
 } cpu;
 
 #define OP(opcode, operation, address_mode) \
@@ -76,7 +63,7 @@ case 0x##opcode: \
 
 void cpu_exec(cpu* cpu, byte instruction);
 void cpu_clear_memory(cpu* cpu);
-void cpu_init(cpu* cpu);
+void cpu_init(cpu* cpu, const word prg_size);
 
 bool cpu_get_c_flag(const cpu* cpu);
 bool cpu_get_z_flag(const cpu* cpu);
