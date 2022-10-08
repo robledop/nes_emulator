@@ -37,7 +37,7 @@ typedef struct
 	word ppu_data_addr;
 } ppu;
 
-#define SCREEN_HEIGHT		240
+#define SCREEN_HEIGHT		224
 #define SCREEN_WIDTH		248
 
 #define TILE_HEIGHT			8

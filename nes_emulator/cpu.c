@@ -53,6 +53,17 @@ static void calc_overflow(cpu* cpu, const word result, const byte operand)
 	}
 }
 
+static void calc_add(cpu* cpu, const byte argument)
+{
+	const word result = cpu->a + argument + (cpu->p & (1 << 0) >> 0);
+	calc_carry(cpu, result);
+	calc_overflow(cpu, result, argument);
+	cpu->a = result & 0xFF;
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);
+}
+
+
 static word get_memory_address(cpu* cpu, const address_mode address_mode)
 {
 	switch (address_mode) {
@@ -268,22 +279,21 @@ static void ldy(cpu* cpu, const address_mode address_mode)
 #endif
 }
 
+
 // Add with Carry
 static void adc(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
-	const word result = cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0);
-	calc_carry(cpu, result);
-	calc_overflow(cpu, result, memory);
-	calc_zero(cpu, (byte)result);
-	calc_negative(cpu, (byte)result);
-	cpu->a = (byte)result;
+	calc_add(cpu, memory);
+
 #ifdef LOGGING
 	printf("ADC %x\n", memory);
 #endif
 }
+
+
 
 // Logical AND
 static void AND(cpu* cpu, const address_mode address_mode)
@@ -920,12 +930,13 @@ static void sbc(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
-	const word result = ~(cpu->a + memory + (cpu_get_v_flag(cpu) ? 1 : 0));
+	calc_add(cpu, ~memory);
+	/*const word result = cpu->a + ~memory + (cpu_get_v_flag(cpu) ? 1 : 0);
 	calc_carry(cpu, result);
 	calc_overflow(cpu, result, memory);
-	calc_zero(cpu, (byte)result);
-	calc_negative(cpu, (byte)result);
-	cpu->a = (byte)result;
+	cpu->a = result & 0x00FF;
+	calc_zero(cpu, cpu->a);
+	calc_negative(cpu, cpu->a);*/
 
 
 #ifdef LOGGING
