@@ -109,15 +109,33 @@ int main(const int argc, char** argv)
 	memcpy(cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 
 	cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
-	
+
+
+	SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Window* window = SDL_CreateWindow(
+		EMULATOR_WINDOW_TITLE,
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
+		SCREEN_WIDTH * PIXEL_HEIGHT,
+		SCREEN_HEIGHT * PIXEL_WIDTH,
+		SDL_WINDOW_SHOWN);
+
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_TEXTUREACCESS_TARGET);
+
+	int x = 0;
 
 	while (true)
 	{
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
-	}
-	render_background(&cpu.ppu);
 
-	free(rom);
+		if (x == 2000)
+		{
+			render_background(&cpu.ppu, renderer, window);
+			x = 0;
+		}
+		x++;
+	}
+
 
 	return 0;
 }
