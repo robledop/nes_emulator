@@ -29,3 +29,6 @@ typedef enum address_mode
 #define PPU_DATA	0x2007
 
 #define EMULATOR_WINDOW_TITLE "NES"
+
+
+#define LOGGING

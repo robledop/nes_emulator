@@ -128,7 +128,7 @@ int main(const int argc, char** argv)
 	{
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
 
-		if (x == 2000)
+		if (x == 40)
 		{
 			render_background(&cpu.ppu, renderer, window);
 			x = 0;
