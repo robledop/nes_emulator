@@ -44,19 +44,18 @@ typedef struct
 	word ppu_data_addr;
 } ppu;
 
-#define SCREEN_HEIGHT		224
-#define SCREEN_WIDTH		248
+#define SCREEN_HEIGHT		240
+#define SCREEN_WIDTH		256
 
 #define TILE_HEIGHT			8
 #define TILE_WIDTH			8
 
-#define PIXEL_HEIGHT		2
-#define PIXEL_WIDTH			2
+#define PIXEL_HEIGHT		4
+#define PIXEL_WIDTH			4
 
 #define PATTERN_TABLE_0		0
 #define PATTERN_TABLE_1		0x1000
 
-#define PATTERN_TABLE_1		0x1000
 #define NAME_TABLE_0		0x2000
 #define NAME_TABLE_1		0x2400
 #define NAME_TABLE_2		0x2800
@@ -86,4 +85,5 @@ static const uint32_t ppu_colors[64] =
 	0xFFE7A3, 0xE3FFA3, 0xABF3BF, 0xB3FFCF, 0x9FFFF3, 0x000000, 0x000000, 0x000000
 };
 
-void render_background(const ppu* ppu, SDL_Renderer* renderer, SDL_Window* window);
+void render_background(const ppu* ppu, SDL_Renderer* renderer);
+void render_sprites(const ppu* ppu, SDL_Renderer* renderer);

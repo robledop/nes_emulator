@@ -109,8 +109,7 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case absolute_y:
 		{
-			const byte low_byte = cpu->memory.data[cpu->pc];
-			cpu->pc++;
+			const byte low_byte = cpu->memory.data[cpu->pc++];
 			const byte high_byte = cpu->memory.data[cpu->pc++];
 			word address = ((word)(high_byte << 8)) | low_byte;
 			address += cpu->y;
@@ -118,7 +117,18 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 		}
 
 		case indirect:
-			assert(false); break;
+		{
+			const byte low_byte = cpu->memory.data[cpu->pc++];
+			const byte high_byte = cpu->memory.data[cpu->pc++];
+			const word address = ((word)(high_byte << 8)) | low_byte;
+
+			const byte indirect_lo_byte = cpu->memory.data[address];
+			const byte indirect_hi_byte = cpu->memory.data[address + 1];
+
+			const word indirect_address = ((word)(indirect_hi_byte << 8)) | indirect_lo_byte;
+
+			return indirect_address;
+		}
 
 		case indexed_indirect:
 		{
@@ -233,9 +243,20 @@ static void write_memory(cpu* cpu, const word address, const byte value)
 				cpu->ppu.ppu_data_latch = true;
 			}
 			break;
+
 		case PPU_DATA:
 			cpu->ppu.memory.data[cpu->ppu.ppu_data_addr++] = value;
 			break;
+
+		case OAM_DMA:
+		{
+			for (word i = 0; i < 256; ++i)
+			{
+				const word oam_copy_address = (word)(value << 8) + i;
+				cpu->ppu.oam.data[i] = cpu->memory.data[oam_copy_address];
+			}
+		}
+		break;
 		default:
 			cpu->memory.data[address] = value;
 	}
@@ -306,7 +327,7 @@ static void AND(cpu* cpu, const address_mode address_mode)
 #ifdef LOGGING
 	printf("AND %x\n", read_memory(cpu, address));
 #endif
-	cpu->pc++;
+	//cpu->pc++;
 }
 
 // Arithmetic Shift Left
@@ -1434,7 +1455,7 @@ void cpu_set_n_flag(cpu* cpu, const char val)
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 7);
 }
 
-void cpu_call_nmi(cpu *cpu)
+void cpu_call_nmi(cpu* cpu)
 {
 	cpu_stack_push_16(cpu, cpu->pc);
 	cpu_stack_push_8(cpu, cpu->p);

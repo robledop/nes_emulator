@@ -69,15 +69,15 @@ void print_header_info(const char* rom, word* prg_size_out, word* chr_size_out)
 
 	switch (flags_10 & 0b00000011)
 	{
-	case 0:
-		puts("TV system: NTSC");
-		break;
-	case 2:
-		puts("TV system: PAL");
-		break;
-	default:
-		puts("TV system: dual compatible");
-		break;
+		case 0:
+			puts("TV system: NTSC");
+			break;
+		case 2:
+			puts("TV system: PAL");
+			break;
+		default:
+			puts("TV system: dual compatible");
+			break;
 	}
 }
 
@@ -126,11 +126,21 @@ int main(const int argc, char** argv)
 
 	while (true)
 	{
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_QUIT)
+			{
+					goto out;
+			}
+		}
+
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
 
 		if (x == 1000)
 		{
-			render_background(&cpu.ppu, renderer, window);
+			render_background(&cpu.ppu, renderer);
+			render_sprites(&cpu.ppu, renderer);
 		}
 
 		if (x == 1001)
@@ -141,7 +151,8 @@ int main(const int argc, char** argv)
 		x++;
 	}
 
-
+out:
+	SDL_DestroyWindow(window);
 	return 0;
 }
 
