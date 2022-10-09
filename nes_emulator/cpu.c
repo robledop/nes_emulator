@@ -905,7 +905,7 @@ static void rti(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
 	cpu->p = cpu_stack_pop_8(cpu);
-	cpu->pc = cpu_stack_pop_8(cpu);
+	cpu->pc = cpu_stack_pop_16(cpu);
 
 #ifdef LOGGING
 	puts("RTI");
@@ -1328,6 +1328,8 @@ void cpu_clear_memory(cpu* cpu)
 void ppu_clear_memory(ppu* ppu)
 {
 	memset(&ppu->memory.data, 0, VRAM_SIZE);
+	memset(&ppu->oam.data, 0, OAM_SIZE);
+
 	ppu->ppu_data_addr = 0x00;
 	ppu->ppu_data_latch = false;
 }
@@ -1354,6 +1356,8 @@ void cpu_init(cpu* cpu, const word prg_size)
 	cpu->y = 0x00;
 
 	cpu->pc = ((word)(cpu->memory.data[0x8000 + prg_size - 3] << 8)) | cpu->memory.data[0x8000 + prg_size - 4];
+
+	cpu->nmi_prt = ((word)(cpu->memory.data[0x8000 + prg_size - 5] << 8)) | cpu->memory.data[0x8000 + prg_size - 6];
 
 	ppu_clear_memory(&cpu->ppu);
 	ppu_clear_registers(&cpu->ppu);
@@ -1430,5 +1434,9 @@ void cpu_set_n_flag(cpu* cpu, const char val)
 	cpu->p ^= (-val ^ cpu->p) & (1UL << 7);
 }
 
-
-
+void cpu_call_nmi(cpu *cpu)
+{
+	cpu_stack_push_16(cpu, cpu->pc);
+	cpu_stack_push_8(cpu, cpu->p);
+	cpu->pc = cpu->nmi_prt;
+}

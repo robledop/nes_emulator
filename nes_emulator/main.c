@@ -128,9 +128,14 @@ int main(const int argc, char** argv)
 	{
 		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
 
-		if (x == 400)
+		if (x == 1000)
 		{
 			render_background(&cpu.ppu, renderer, window);
+		}
+
+		if (x == 1001)
+		{
+			cpu_call_nmi(&cpu);
 			x = 0;
 		}
 		x++;

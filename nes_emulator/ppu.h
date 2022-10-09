@@ -7,11 +7,17 @@
 #include "config.h"
 
 #define VRAM_SIZE 0x3FFF
+#define OAM_SIZE 256
 
 typedef struct
 {
 	byte data[VRAM_SIZE];
 } vram;
+
+typedef struct
+{
+	byte data[OAM_SIZE];
+} oam;
 
 typedef struct
 {
@@ -32,6 +38,7 @@ typedef struct
 typedef struct
 {
 	vram memory;
+	oam	oam;
 	registers registers;
 	bool ppu_data_latch;
 	word ppu_data_addr;

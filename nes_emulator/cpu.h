@@ -28,6 +28,7 @@ typedef struct
 
 typedef struct
 {
+	word nmi_prt;
 	// Accumulator
 	byte a;
 
@@ -51,6 +52,7 @@ typedef struct
 
 	// Program counter
 	word pc;
+
 
 	memory memory;
 	ppu ppu;
@@ -80,3 +82,5 @@ void cpu_set_d_flag(cpu* cpu, const char val);
 void cpu_set_b_flag(cpu* cpu, const char val);
 void cpu_set_v_flag(cpu* cpu, const char val);
 void cpu_set_n_flag(cpu* cpu, const char val);
+
+void cpu_call_nmi(cpu* cpu);
