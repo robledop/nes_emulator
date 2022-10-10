@@ -109,7 +109,7 @@ int main(const int argc, char** argv)
 	memcpy(cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 
 	cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
-
+	//cpu.pc = 0xc000; // FOR NESTEST
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* window = SDL_CreateWindow(
@@ -143,9 +143,12 @@ int main(const int argc, char** argv)
 			render_sprites(&cpu.ppu, renderer);
 		}
 
-		if (x == 1001)
+		if (x == 1001 )
 		{
-			cpu_call_nmi(&cpu);
+			if (cpu.ppu.registers.ppu_ctrl & 0b10000000)
+			{
+				cpu_call_nmi(&cpu);
+			}
 			x = 0;
 		}
 		x++;

@@ -19,6 +19,15 @@
 
 #define SIGN_BIT		0x80
 
+#define C_FLAG			0b00000001
+#define Z_FLAG			0b00000010
+#define I_FLAG			0b00000100
+#define D_FLAG			0b00001000
+#define B_FLAG			0b00010000
+#define V_FLAG			0b01000000
+#define N_FLAG			0b10000000
+#define UNUSED_FLAG		0b00100000
+
 
 
 typedef struct
@@ -29,6 +38,7 @@ typedef struct
 typedef struct
 {
 	word nmi_prt;
+
 	// Accumulator
 	byte a;
 

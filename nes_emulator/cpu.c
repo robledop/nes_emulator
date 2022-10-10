@@ -747,8 +747,8 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 static void jsr(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == absolute);
+	cpu_stack_push_16(cpu, cpu->pc + 3);
 	cpu->pc++;
-	cpu_stack_push_16(cpu, cpu->pc + 2);
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->pc = address;
 
@@ -830,7 +830,7 @@ static void php(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
 	cpu->pc++;
-	cpu_stack_push_8(cpu, cpu->p);
+	cpu_stack_push_8(cpu, (cpu->p | UNUSED_FLAG) | B_FLAG);
 
 #ifdef LOGGING
 	puts("PHP");
@@ -1258,6 +1258,8 @@ void cpu_exec(cpu* cpu, const byte instruction)
 		OP(5E, lsr, absolute_x);
 
 		OP(EA, nop, implicit);
+		OP(1A, nop, implicit);
+		OP(3A, nop, implicit);
 
 		OP(09, ora, immediate);
 		OP(05, ora, zero_page);
@@ -1371,7 +1373,7 @@ void ppu_clear_registers(ppu* ppu)
 void cpu_init(cpu* cpu, const word prg_size)
 {
 	cpu->sp = 0xFF;
-	cpu->p = 0b00010000;
+	cpu->p = 0b00100000;
 	cpu->a = 0x00;
 	cpu->x = 0x00;
 	cpu->y = 0x00;
@@ -1386,73 +1388,73 @@ void cpu_init(cpu* cpu, const word prg_size)
 
 bool cpu_get_c_flag(const cpu* cpu)
 {
-	return cpu->p & 0b00000001;
+	return cpu->p & C_FLAG;
 }
 
 bool cpu_get_z_flag(const cpu* cpu)
 {
-	return cpu->p & 0b00000010;
+	return cpu->p & Z_FLAG;
 }
 
 bool cpu_get_i_flag(const cpu* cpu)
 {
-	return cpu->p & 0b00000100;
+	return cpu->p & I_FLAG;
 }
 
 bool cpu_get_d_flag(const cpu* cpu)
 {
-	return cpu->p & 0b00001000;
+	return cpu->p & D_FLAG;
 }
 
 bool cpu_get_b_flag(const cpu* cpu)
 {
-	return cpu->p & 0b00010000;
+	return cpu->p & B_FLAG;
 }
 
 bool cpu_get_v_flag(const cpu* cpu)
 {
-	return cpu->p & 0b01000000;
+	return cpu->p & V_FLAG;
 }
 
 bool cpu_get_n_flag(const cpu* cpu)
 {
-	return cpu->p & 0b10000000;
+	return cpu->p & N_FLAG;
 }
 
 
 void cpu_set_c_flag(cpu* cpu, const unsigned char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 0);
+	cpu->p ^= (-val ^ cpu->p) & C_FLAG;
 }
 
 void cpu_set_z_flag(cpu* cpu, const unsigned char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 1);
+	cpu->p ^= (-val ^ cpu->p) & Z_FLAG;
 }
 
 void cpu_set_i_flag(cpu* cpu, const char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 2);
+	cpu->p ^= (-val ^ cpu->p) & I_FLAG;
 }
 
 void cpu_set_d_flag(cpu* cpu, const char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 3);
+	cpu->p ^= (-val ^ cpu->p) & D_FLAG;
 }
 
 void cpu_set_b_flag(cpu* cpu, const char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 4);
+	cpu->p ^= (-val ^ cpu->p) & B_FLAG;
 }
 
 void cpu_set_v_flag(cpu* cpu, const char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 6);
+	cpu->p ^= (-val ^ cpu->p) & V_FLAG;
 }
 
 void cpu_set_n_flag(cpu* cpu, const char val)
 {
-	cpu->p ^= (-val ^ cpu->p) & (1UL << 7);
+	cpu->p ^= (-val ^ cpu->p) & N_FLAG;
 }
 
 void cpu_call_nmi(cpu* cpu)
