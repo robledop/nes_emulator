@@ -39,7 +39,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\nes_course\load_background\load_background.nes" />
-  </ItemGroup>
 </Project>

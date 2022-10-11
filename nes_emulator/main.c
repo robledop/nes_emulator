@@ -105,6 +105,11 @@ int main(const int argc, char** argv)
 
 	memcpy(&cpu.memory.data[0x8000], &rom[16], prg_size);
 
+	if (prg_size == 0x4000)
+	{
+		memcpy(&cpu.memory.data[0xC000], &rom[16], prg_size);
+	}
+
 	cpu_init(&cpu, prg_size);
 	memcpy(cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 

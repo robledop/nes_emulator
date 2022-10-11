@@ -150,9 +150,6 @@
     <ClInclude Include="cpu.h" />
     <ClInclude Include="nes.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\nes_course\load_background\load_background.nes" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
