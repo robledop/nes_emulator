@@ -4,7 +4,9 @@
 #include <stdint.h>
 
 #include "cpu.h"
+#include "input.h"
 #include "ppu.h"
+#include "nes.h"
 
 int load_file(char** text, const char* filename, uint32_t* size_out);
 
@@ -97,23 +99,26 @@ int main(const int argc, char** argv)
 	word prg_size;
 	word chr_size;
 
-	cpu cpu;
-	cpu_clear_memory(&cpu);
+	nes nes;
+
+	cpu_clear_memory(&nes.cpu);
 
 	print_header_info(rom, &prg_size, &chr_size);
 
 
-	memcpy(&cpu.memory.data[0x8000], &rom[16], prg_size);
+	memcpy(&nes.cpu.memory.data[0x8000], &rom[0x10], prg_size);
 
 	if (prg_size == 0x4000)
 	{
-		memcpy(&cpu.memory.data[0xC000], &rom[16], prg_size);
+		memcpy(&nes.cpu.memory.data[0xC000], &rom[0x10], prg_size);
 	}
 
-	cpu_init(&cpu, prg_size);
-	memcpy(cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
+	nes.cpu.controller = &nes.controller;
 
-	cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
+	cpu_init(&nes.cpu, prg_size);
+	memcpy(nes.cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
+
+	nes.cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
 	//cpu.pc = 0xc000; // FOR NESTEST
 
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -136,23 +141,25 @@ int main(const int argc, char** argv)
 		{
 			if (event.type == SDL_QUIT)
 			{
-					goto out;
+				goto out;
 			}
+			handle_input(&nes.controller, &event);
 		}
 
-		cpu_exec(&cpu, cpu.memory.data[cpu.pc]);
+
+		cpu_exec(&nes.cpu, nes.cpu.memory.data[nes.cpu.pc]);
 
 		if (x == 1000)
 		{
-			render_background(&cpu.ppu, renderer);
-			render_sprites(&cpu.ppu, renderer);
+			render_background(&nes.cpu.ppu, renderer);
+			render_sprites(&nes.cpu.ppu, renderer);
 		}
 
-		if (x == 1001 )
+		if (x == 1001)
 		{
-			if (cpu.ppu.registers.ppu_ctrl & 0b10000000)
+			if (nes.cpu.ppu.registers.ppu_ctrl & 0b10000000)
 			{
-				cpu_call_nmi(&cpu);
+				cpu_call_nmi(&nes.cpu);
 			}
 			x = 0;
 		}
@@ -161,6 +168,7 @@ int main(const int argc, char** argv)
 
 out:
 	SDL_DestroyWindow(window);
+	free(rom);
 	return 0;
 }
 
@@ -172,22 +180,21 @@ int load_file(char** text, const char* filename, uint32_t* size_out)
 	{
 		if (fseek(fp, 0L, SEEK_END) == 0)
 		{
-			// Get the size of the file.
 			const long bufsize = ftell(fp);
 			if (bufsize == -1)
 			{
+				fclose(fp);
 				return 1;
 			}
 			*size_out = sizeof(char) * (bufsize + 1) + 100;
 			*text = malloc(*size_out);
 
-			// Go back to the start of the file.
 			if (fseek(fp, 0L, SEEK_SET) != 0)
 			{
+				fclose(fp);
 				return 1;
 			}
 
-			// Read the entire file into memory.
 			fread(*text, sizeof(char), bufsize, fp);
 			if (ferror(fp) != 0)
 			{

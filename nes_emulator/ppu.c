@@ -105,10 +105,10 @@ void draw_bg_tile_row(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte
 	}
 }
 
-void draw_sprite_row_pixel(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte, const byte hi_byte, const int y, const word attribute, int *rx, int i)
+void draw_sprite_row_pixel(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte, const byte hi_byte, const int y, int* x, const word attribute, const int bit)
 {
-	const bool is_lo_set = lo_byte & (0b10000000 >> i);
-	const bool is_hi_set = hi_byte & (0b10000000 >> i);
+	const bool is_lo_set = lo_byte & (0b10000000 >> bit);
+	const bool is_hi_set = hi_byte & (0b10000000 >> bit);
 
 	Uint8 red;
 	Uint8 green;
@@ -116,36 +116,36 @@ void draw_sprite_row_pixel(const ppu* ppu, SDL_Renderer* renderer, const byte lo
 	const word palette_base = get_sprite_palette(attribute & 0b00000011);
 	if (is_lo_set && !is_hi_set)
 	{
-		const word value = ppu->memory.data[palette_base + 2];
-		get_rgb_color(&red, &green, &blue, value);
+		const word index = ppu->memory.data[palette_base + 2];
+		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
 	else if (is_lo_set && is_hi_set)
 	{
-		const word value = ppu->memory.data[palette_base + 3];
-		get_rgb_color(&red, &green, &blue, value);
+		const word index = ppu->memory.data[palette_base + 3];
+		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
 	else if (!is_lo_set && is_hi_set)
 	{
-		const word value = ppu->memory.data[palette_base + 1];
-		get_rgb_color(&red, &green, &blue, value);
+		const word index = ppu->memory.data[palette_base + 1];
+		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
 	else if (!is_lo_set && !is_hi_set)
 	{
-		const word value = ppu->memory.data[palette_base + 0];
-		get_rgb_color(&red, &green, &blue, value);
+		const word index = ppu->memory.data[palette_base + 0];
+		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
 
 	SDL_Rect r;
-	r.x = *rx;
+	r.x = *x;
 	r.y = y;
 	r.w = PIXEL_WIDTH;
 	r.h = PIXEL_HEIGHT;
 	SDL_RenderFillRect(renderer, &r);
-	*rx += PIXEL_WIDTH;
+	*x += PIXEL_WIDTH;
 }
 
 void draw_sprite_tile_row(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte, const byte hi_byte, const int x, const int y, const word attribute)
@@ -158,18 +158,16 @@ void draw_sprite_tile_row(const ppu* ppu, SDL_Renderer* renderer, const byte lo_
 	{
 		for (int i = 7; i > -1; i--)
 		{
-			draw_sprite_row_pixel(ppu, renderer, lo_byte, hi_byte, y, attribute, &rx, i);
+			draw_sprite_row_pixel(ppu, renderer, lo_byte, hi_byte, y, &rx, attribute, i);
 		}
 	}
 	else
 	{
 		for (int i = 0; i < 8; i++)
 		{
-			draw_sprite_row_pixel(ppu, renderer, lo_byte, hi_byte, y, attribute, &rx, i);
+			draw_sprite_row_pixel(ppu, renderer, lo_byte, hi_byte, y, &rx, attribute, i);
 		}
 	}
-
-	
 }
 
 void draw_bg_tile(const ppu* ppu, SDL_Renderer* renderer, int x, int y, const word pattern_pos, const word attr_tb_addr, const word nt_pos)
@@ -276,17 +274,12 @@ void draw_sprites(const ppu* ppu, SDL_Renderer* renderer)
 
 void render_background(const ppu* ppu, SDL_Renderer* renderer)
 {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-	SDL_RenderClear(renderer);
-
 	draw_tiles(ppu, renderer);
 
-	SDL_RenderPresent(renderer);
 }
 
 void render_sprites(const ppu* ppu, SDL_Renderer* renderer)
 {
 	draw_sprites(ppu, renderer);
-
 	SDL_RenderPresent(renderer);
 }

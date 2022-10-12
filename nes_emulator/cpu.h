@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "ppu.h"
+#include "input.h"
 
 #define MAX_MEMORY		65536
 #define STACK_BASE		0x100
@@ -66,6 +67,7 @@ typedef struct
 
 	memory memory;
 	ppu ppu;
+	controller* controller;
 } cpu;
 
 #define OP(opcode, operation, address_mode) \
@@ -94,3 +96,5 @@ void cpu_set_v_flag(cpu* cpu, const char val);
 void cpu_set_n_flag(cpu* cpu, const char val);
 
 void cpu_call_nmi(cpu* cpu);
+
+void cpu_init_controller(cpu* cpu, controller* controller);

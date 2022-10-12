@@ -27,15 +27,21 @@
     <ClCompile Include="ppu.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nes.h">
+    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

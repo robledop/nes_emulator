@@ -1,6 +1,5 @@
 #include "cpu.h"
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 #include "memory.h"
 
@@ -66,26 +65,19 @@ static void calc_add(cpu* cpu, const byte argument)
 	calc_negative(cpu, cpu->a);
 }
 
-byte cpu_read_memory(const cpu* cpu, word address)
+byte cpu_read_memory(const cpu* cpu, const word address)
 {
-
-
 	return cpu->memory.data[address];
 }
 
-void cpu_write_memory(cpu* cpu, word address, const byte value)
+void cpu_write_memory(cpu* cpu, const word address, const byte value)
 {
-
-
 	cpu->memory.data[address] = value;
 }
 
-
-
-
 static word get_memory_address(cpu* cpu, const address_mode address_mode)
 {
-	switch (address_mode) {
+	switch (address_mode) {  // NOLINT(hicpp-multiway-paths-covered)
 		case implicit:
 			assert(false);
 			break;
@@ -97,21 +89,39 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			return cpu->pc++;
 
 		case zero_page:
-			return read_memory(cpu, cpu->pc++);
+		{
+			const byte value = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			return value;
+		}
 
 		case zero_page_x:
-			return read_memory(cpu, cpu->pc++) + cpu->x;
+		{
+			const byte value = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			return value + cpu->x;
+		}
 
 		case zero_page_y:
-			return read_memory(cpu, cpu->pc++) + cpu->y;
+		{
+			const byte value = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			return value + cpu->y;
+		}
 
 		case relative:
-			return read_memory(cpu, cpu->pc++);
+		{
+			const byte value = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			return value;
+		}
 
 		case absolute:
 		{
-			const byte low_byte = read_memory(cpu, cpu->pc++);
-			const byte high_byte = read_memory(cpu, cpu->pc++);
+			const byte low_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			const byte high_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
 			return  ((word)(high_byte << 8)) | low_byte;
 		}
 
@@ -119,7 +129,8 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 		{
 			const byte low_byte = read_memory(cpu, cpu->pc);
 			cpu->pc++;
-			const byte high_byte = read_memory(cpu, cpu->pc++);
+			const byte high_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
 			word address = ((word)(high_byte << 8)) | low_byte;
 			address += cpu->x;
 			return address;
@@ -127,8 +138,10 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case absolute_y:
 		{
-			const byte low_byte = read_memory(cpu, cpu->pc++);
-			const byte high_byte = read_memory(cpu, cpu->pc++);
+			const byte low_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			const byte high_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
 			word address = ((word)(high_byte << 8)) | low_byte;
 			address += cpu->y;
 			return address;
@@ -136,8 +149,10 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indirect:
 		{
-			const byte low_byte = read_memory(cpu, cpu->pc++);
-			const byte high_byte = read_memory(cpu, cpu->pc++);
+			const byte low_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
+			const byte high_byte = read_memory(cpu, cpu->pc);
+			cpu->pc++;
 			const word address = ((word)(high_byte << 8)) | low_byte;
 
 			const byte indirect_lo_byte = read_memory(cpu, address);
@@ -150,8 +165,8 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indexed_indirect:
 		{
-			const byte vector = read_memory(cpu, cpu->pc++) + cpu->x;
-
+			const byte vector = read_memory(cpu, cpu->pc) + cpu->x;
+			cpu->pc++;
 			const byte low_byte = read_memory(cpu, vector);
 			const byte high_byte = read_memory(cpu, vector + 1);
 			return  ((word)(high_byte << 8)) | low_byte;
@@ -159,8 +174,8 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indirect_indexed:
 		{
-			const byte vector = read_memory(cpu, cpu->pc++);
-
+			const byte vector = read_memory(cpu, cpu->pc);
+			cpu->pc++;
 			const byte low_byte = read_memory(cpu, vector);
 			const byte high_byte = read_memory(cpu, vector + 1);
 
@@ -168,8 +183,6 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			address += cpu->y;
 			return  address;
 		}
-
-		default: assert(false);
 	}
 
 	return 0;
@@ -199,16 +212,15 @@ static byte cpu_stack_pop_8(cpu* cpu)
 	return  read_memory(cpu, STACK_BASE + ++cpu->sp);
 }
 
-
 static byte read_memory(cpu* cpu, word address)
 {
 	// handle memory mirroring
-	while (address >= 0x2008 && address < 0x4000) 
+	while (address >= 0x2008 && address < 0x4000)
 	{
 		address -= 8;
 	}
 
-	while (address >= 0x0800 && address < 0x2000) 
+	while (address >= 0x0800 && address < 0x2000)
 	{
 		address -= 0x0800;
 	}
@@ -232,6 +244,8 @@ static byte read_memory(cpu* cpu, word address)
 			return cpu->ppu.registers.ppu_addr;
 		case PPU_DATA:
 			return cpu->ppu.registers.ppu_data;
+		case CONTROLLER_1:
+			return read_next_button(cpu->controller);
 		default:
 			return cpu_read_memory(cpu, address);
 	}
@@ -240,11 +254,11 @@ static byte read_memory(cpu* cpu, word address)
 static void write_memory(cpu* cpu, word address, const byte value)
 {
 	// handle memory mirroring
-	while (address >= 0x2008 && address < 0x4000) 
+	while (address >= 0x2008 && address < 0x4000)
 	{
 		address -= 8;
 	}
-	while (address >= 0x0800 && address < 0x2000) 
+	while (address >= 0x0800 && address < 0x2000)
 	{
 		address -= 0x0800;
 	}
@@ -284,7 +298,10 @@ static void write_memory(cpu* cpu, word address, const byte value)
 			break;
 
 		case PPU_DATA:
-			cpu->ppu.memory.data[cpu->ppu.ppu_data_addr++] = value;
+			if (cpu->ppu.ppu_data_addr <= VRAM_SIZE)
+			{
+				cpu->ppu.memory.data[cpu->ppu.ppu_data_addr++] = value;
+			}
 			break;
 
 		case OAM_DMA:
@@ -296,6 +313,10 @@ static void write_memory(cpu* cpu, word address, const byte value)
 			}
 		}
 		break;
+
+		case CONTROLLER_1:
+			write_controller(cpu->controller, value);
+			break;
 		default:
 			cpu_write_memory(cpu, address, value);
 	}
@@ -360,7 +381,8 @@ static void AND(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->a &= read_memory(cpu, address);
+	const byte value = read_memory(cpu, address);
+	cpu->a &= value;
 	calc_negative(cpu, cpu->a);
 	calc_zero(cpu, cpu->a);
 #ifdef LOGGING
@@ -379,12 +401,13 @@ static void asl(cpu* cpu, const address_mode address_mode)
 #ifdef LOGGING
 		puts("ASL");
 #endif
-	}
+}
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		cpu_set_c_flag(cpu, (read_memory(cpu, address) & 0x10000000));
 		const byte value = read_memory(cpu, address);
-		write_memory(cpu, address, value << 1);
+		write_memory(cpu, address, (byte)(value << 1));
+
 #ifdef LOGGING
 		printf("ASL %x\n", address);
 #endif
@@ -403,7 +426,7 @@ static void bcc(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-	}
+}
 #ifdef LOGGING
 	printf("BCC %x\n", cpu->pc);
 #endif
@@ -421,7 +444,7 @@ static void bcs(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-	}
+}
 
 #ifdef LOGGING
 	printf("BCS %x\n", cpu->pc);
@@ -440,7 +463,7 @@ static void beq(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-	}
+}
 
 #ifdef LOGGING
 	printf("BEQ %x\n", cpu->pc);
@@ -474,7 +497,7 @@ static void bmi(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-	}
+}
 #ifdef LOGGING
 	printf("BMI %x\n", cpu->pc);
 #endif
@@ -492,7 +515,7 @@ static void bne(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-	}
+}
 #ifdef LOGGING
 	printf("BNE %x\n", cpu->pc);
 #endif
@@ -509,7 +532,7 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 #ifdef LOGGING
 		printf("BPL %x\n", address);
 #endif
-	}
+}
 	else
 	{
 		cpu->pc++;
@@ -545,7 +568,7 @@ static void bvc(cpu* cpu, const address_mode address_mode)
 	{
 		const word address = get_memory_address(cpu, address_mode);
 		cpu->pc += (char)address;
-	}
+}
 #ifdef LOGGING
 	printf("BVC %x\n", cpu->pc);
 #endif
@@ -785,8 +808,8 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 static void jsr(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == absolute);
-	cpu_stack_push_16(cpu, cpu->pc + 3);
 	cpu->pc++;
+	cpu_stack_push_16(cpu, cpu->pc + 2);
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->pc = address;
 
@@ -905,7 +928,7 @@ static void rol(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0b10000000));
+		cpu_set_c_flag(cpu, (cpu->a & 0b10000000 ? 1 : 0));
 		cpu->a <<= 1;
 		cpu->a |= cpu_get_c_flag(cpu) ? 1 : 0;
 
@@ -916,8 +939,8 @@ static void rol(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (memory & 0b10000000));
-		byte new_value = memory << 1;
+		cpu_set_c_flag(cpu, (memory & 0b10000000 ? 1 : 0));
+		byte new_value = (byte)(memory << 1);
 		new_value = new_value | (cpu_get_c_flag(cpu) ? 1 : 0);
 		write_memory(cpu, address, new_value);
 
@@ -1415,7 +1438,10 @@ void cpu_init(cpu* cpu, const word prg_size)
 
 	ppu_clear_memory(&cpu->ppu);
 	ppu_clear_registers(&cpu->ppu);
+	init_controller(cpu->controller);
 }
+
+
 
 bool cpu_get_c_flag(const cpu* cpu)
 {
