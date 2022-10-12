@@ -401,7 +401,7 @@ static void asl(cpu* cpu, const address_mode address_mode)
 #ifdef LOGGING
 		puts("ASL");
 #endif
-}
+	}
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		cpu_set_c_flag(cpu, (read_memory(cpu, address) & 0x10000000));
@@ -426,7 +426,7 @@ static void bcc(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-}
+	}
 #ifdef LOGGING
 	printf("BCC %x\n", cpu->pc);
 #endif
@@ -444,7 +444,7 @@ static void bcs(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-}
+	}
 
 #ifdef LOGGING
 	printf("BCS %x\n", cpu->pc);
@@ -463,7 +463,7 @@ static void beq(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-}
+	}
 
 #ifdef LOGGING
 	printf("BEQ %x\n", cpu->pc);
@@ -497,7 +497,7 @@ static void bmi(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-}
+	}
 #ifdef LOGGING
 	printf("BMI %x\n", cpu->pc);
 #endif
@@ -515,7 +515,7 @@ static void bne(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
-}
+	}
 #ifdef LOGGING
 	printf("BNE %x\n", cpu->pc);
 #endif
@@ -532,7 +532,7 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 #ifdef LOGGING
 		printf("BPL %x\n", address);
 #endif
-}
+	}
 	else
 	{
 		cpu->pc++;
@@ -568,7 +568,7 @@ static void bvc(cpu* cpu, const address_mode address_mode)
 	{
 		const word address = get_memory_address(cpu, address_mode);
 		cpu->pc += (char)address;
-}
+	}
 #ifdef LOGGING
 	printf("BVC %x\n", cpu->pc);
 #endif
@@ -928,7 +928,7 @@ static void rol(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0b10000000 ? 1 : 0));
+		cpu_set_c_flag(cpu, (cpu->a & 0b10000000) ? 1 : 0);
 		cpu->a <<= 1;
 		cpu->a |= cpu_get_c_flag(cpu) ? 1 : 0;
 
@@ -939,9 +939,10 @@ static void rol(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (memory & 0b10000000 ? 1 : 0));
+		const bool current_carry_flag = cpu_get_c_flag(cpu);
+		cpu_set_c_flag(cpu, (memory & 0b10000000) ? 1 : 0);
 		byte new_value = (byte)(memory << 1);
-		new_value = new_value | (cpu_get_c_flag(cpu) ? 1 : 0);
+		new_value = new_value | (current_carry_flag ? 1 : 0);
 		write_memory(cpu, address, new_value);
 
 #ifdef LOGGING
@@ -954,11 +955,12 @@ static void rol(cpu* cpu, const address_mode address_mode)
 static void ror(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
+	const bool current_carry_flag = cpu_get_c_flag(cpu);
 	if (address_mode == accumulator)
 	{
 		cpu_set_c_flag(cpu, (cpu->a & 0b00000001));
 		cpu->a >>= 1;
-		cpu->a |= cpu_get_c_flag(cpu) ? 0b10000000 : 0;
+		cpu->a |= current_carry_flag ? 0b10000000 : 0;
 		calc_negative(cpu, cpu->a);
 		calc_zero(cpu, cpu->a);
 
@@ -971,7 +973,7 @@ static void ror(cpu* cpu, const address_mode address_mode)
 		const byte memory = read_memory(cpu, address);
 		cpu_set_c_flag(cpu, (memory & 0b10000000));
 		byte new_value = memory >> 1;
-		new_value = new_value | (cpu_get_c_flag(cpu) ? 0b10000000 : 0);
+		new_value = new_value | (current_carry_flag ? 0b10000000 : 0);
 		write_memory(cpu, address, new_value);
 		calc_negative(cpu, read_memory(cpu, address));
 		calc_zero(cpu, read_memory(cpu, address));
