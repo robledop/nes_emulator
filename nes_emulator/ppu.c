@@ -43,54 +43,39 @@ void get_rgb_color(Uint8* r, Uint8* g, Uint8* b, const word index)
 	*b = colors & 0xFF;
 }
 
-void draw_bg_tile_row(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte, const byte hi_byte, const int x, const int y, const word attribute)
+void draw_bg_tile_row(const ppu* ppu, SDL_Renderer* renderer, const byte lo_byte, const byte hi_byte, const int x, const int y, const word palette_base)
 {
-
 	int rx = x;
 	for (int i = 0; i < 8; i++)
 	{
 		const bool is_lo_set = lo_byte & (0b10000000 >> i);
 		const bool is_hi_set = hi_byte & (0b10000000 >> i);
 
-		// MONOCHROME MODE
-
-		//if (is_hi_set || is_lo_set)
-		//{
-		//	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		//}
-		//else
-		//{
-		//	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		//}
-
 		Uint8 red;
 		Uint8 green;
 		Uint8 blue;
-		if (is_lo_set && !is_hi_set)
+
+		if (!is_hi_set && !is_lo_set) // 0
 		{
-			const word palette_base = get_background_palette((attribute >> 6) & 0b00000011);
+			const word value = ppu->memory.data[palette_base + 0];
+			get_rgb_color(&red, &green, &blue, value);
+			SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
+		}
+		else if (!is_hi_set && is_lo_set) // 1
+		{
 			const word value = ppu->memory.data[palette_base + 2];
 			get_rgb_color(&red, &green, &blue, value);
 			SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 		}
-		else if (is_lo_set && is_hi_set)
+		else if (is_hi_set && !is_lo_set) // 2
 		{
-			const word palette_base = get_background_palette((attribute >> 4) & 0b00000011);
-			const word value = ppu->memory.data[palette_base + 3];
-			get_rgb_color(&red, &green, &blue, value);
-			SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
-		}
-		else if (!is_lo_set && is_hi_set)
-		{
-			const word palette_base = get_background_palette((attribute >> 2) & 0b00000011);
 			const word value = ppu->memory.data[palette_base + 1];
 			get_rgb_color(&red, &green, &blue, value);
 			SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 		}
-		else if (!is_lo_set && !is_hi_set)
+		else if (is_hi_set && is_lo_set) // 3
 		{
-			const word palette_base = get_background_palette(attribute & 0b00000011);
-			const word value = ppu->memory.data[palette_base + 0];
+			const word value = ppu->memory.data[palette_base + 3];
 			get_rgb_color(&red, &green, &blue, value);
 			SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 		}
@@ -114,27 +99,22 @@ void draw_sprite_row_pixel(const ppu* ppu, SDL_Renderer* renderer, const byte lo
 	Uint8 green;
 	Uint8 blue;
 	const word palette_base = get_sprite_palette(attribute & 0b00000011);
-	if (is_lo_set && !is_hi_set)
+
+	if (!is_hi_set && is_lo_set) // 1
 	{
 		const word index = ppu->memory.data[palette_base + 2];
 		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
-	else if (is_lo_set && is_hi_set)
-	{
-		const word index = ppu->memory.data[palette_base + 3];
-		get_rgb_color(&red, &green, &blue, index);
-		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
-	}
-	else if (!is_lo_set && is_hi_set)
+	else if (is_hi_set && !is_lo_set) // 2
 	{
 		const word index = ppu->memory.data[palette_base + 1];
 		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
-	else if (!is_lo_set && !is_hi_set)
+	else if (is_hi_set && is_lo_set) // 3
 	{
-		const word index = ppu->memory.data[palette_base + 0];
+		const word index = ppu->memory.data[palette_base + 3];
 		get_rgb_color(&red, &green, &blue, index);
 		SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
 	}
@@ -144,7 +124,10 @@ void draw_sprite_row_pixel(const ppu* ppu, SDL_Renderer* renderer, const byte lo
 	r.y = y;
 	r.w = PIXEL_WIDTH;
 	r.h = PIXEL_HEIGHT;
-	SDL_RenderFillRect(renderer, &r);
+	if (is_hi_set || is_lo_set)
+	{
+		SDL_RenderFillRect(renderer, &r);
+	}
 	*x += PIXEL_WIDTH;
 }
 
@@ -177,13 +160,18 @@ void draw_bg_tile(const ppu* ppu, SDL_Renderer* renderer, int x, int y, const wo
 
 	const byte attribute = ppu->memory.data[attribute_address];
 
+	const byte attribute_shift = ((nt_pos & 0x40) >> 4) | (nt_pos & 0x2);
+	const byte palette_selector = (attribute >> attribute_shift) & 0x3;
+
+
+	const word palette_base = get_background_palette(palette_selector);
+
 	for (word i = 0; i < 8; i++)
 	{
 		const byte tile_hi_byte = ppu->memory.data[pattern_pos + i];
 		const byte tile_lo_byte = ppu->memory.data[pattern_pos + i + 8];
 
-
-		draw_bg_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, attribute);
+		draw_bg_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, palette_base);
 		y += PIXEL_HEIGHT;
 	}
 }
