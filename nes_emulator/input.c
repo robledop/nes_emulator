@@ -5,6 +5,7 @@ byte read_next_button(controller* controller)
 	const byte button_value = controller->buttons[controller->current_read++];
 	controller->current_read = controller->current_read % 8;
 	return button_value;
+
 }
 
 void write_controller(controller *controller, const byte value)
@@ -28,6 +29,15 @@ void init_controller(controller* controller)
 
 void handle_input(controller* controller, const SDL_Event* event)
 {
+	//if (controller->buttons[3])
+	//{
+	//	controller->buttons[3] = 0;
+	//}
+	//else
+	//{
+	//	controller->buttons[3] = 1;
+	//}
+	
 	if (event->type == SDL_KEYDOWN)
 	{
 		switch (event->key.keysym.sym) {

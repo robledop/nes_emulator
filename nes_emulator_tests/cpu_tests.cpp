@@ -24,7 +24,7 @@ namespace nes_emulator_tests
 			cpu.memory.data[0xFFFC] = 0x00;
 			cpu.memory.data[0xFFFD] = 0x80;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			Assert::IsTrue(cpu.a == 0x00);
 			Assert::IsTrue(cpu.sp == 0xFF);

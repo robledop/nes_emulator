@@ -118,7 +118,7 @@ int main(const int argc, char** argv)
 	cpu_init(&nes.cpu, prg_size);
 	memcpy(nes.cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 
-	nes.cpu.ppu.registers.ppu_status = 0xFF; // FOR TESTING
+	//nes.cpu.ppu.registers.ppu_status = 0xf0; // FOR TESTING
 	//cpu.pc = 0xc000; // FOR NESTEST
 
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -155,8 +155,14 @@ int main(const int argc, char** argv)
 			render_sprites(&nes.cpu.ppu, renderer);
 		}
 
+		if (x >= 300)
+		{
+			nes.cpu.ppu.registers.ppu_status ^= (0 ^ nes.cpu.ppu.registers.ppu_status) & 0b10000000;
+		}
+
 		if (x == 1001)
 		{
+			nes.cpu.ppu.registers.ppu_status |= 0b10000000;
 			if (nes.cpu.ppu.registers.ppu_ctrl & 0b10000000)
 			{
 				cpu_call_nmi(&nes.cpu);

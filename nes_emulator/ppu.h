@@ -12,7 +12,7 @@
 typedef struct
 {
 	byte data[VRAM_SIZE];
-} vram;
+} vram_rom;
 
 typedef struct
 {
@@ -26,7 +26,8 @@ typedef struct
 	byte ppu_status;
 	byte oam_addr;
 	byte oam_data;
-	byte ppu_scroll;
+	byte ppu_scroll_x;
+	byte ppu_scroll_y;
 	byte ppu_addr;
 	byte ppu_data;
 	byte oam_dma;
@@ -37,10 +38,12 @@ typedef struct
 
 typedef struct
 {
-	vram memory;
+	vram_rom memory;
 	oam	oam;
 	registers registers;
-	bool ppu_data_latch;
+
+	// w
+	bool ppu_latch;
 	word ppu_data_addr;
 } ppu;
 
@@ -66,6 +69,11 @@ typedef struct
 
 // Background pattern table address (0: $0000; 1: $1000)
 #define BG_PT_ADDR_FLAG		0b00010000
+
+// Sprite pattern table address for 8x8 sprites
+// (0: $0000; 1: $1000; ignored in 8x16 mode)
+#define SPRITE_PT_ADDR_FLAG		0b00001000
+
 
 // Base name table address
 // (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)

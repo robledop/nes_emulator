@@ -57,7 +57,7 @@ static void calc_overflow(cpu* cpu, const word result, const byte operand)
 
 static void calc_add(cpu* cpu, const byte argument)
 {
-	const word result = cpu->a + argument + (cpu->p & (1 << 0) >> 0);
+	const word result = cpu->a + argument + (cpu_get_c_flag(cpu) ? 1 : 0);
 	calc_carry(cpu, result);
 	calc_overflow(cpu, result, argument);
 	cpu->a = result & 0xFF;
@@ -197,7 +197,8 @@ static void cpu_stack_push_16(cpu* cpu, const word val)
 
 static void cpu_stack_push_8(cpu* cpu, const byte val)
 {
-	write_memory(cpu, STACK_BASE + cpu->sp--, val);
+	write_memory(cpu, STACK_BASE + cpu->sp, val);
+	cpu->sp--;
 }
 
 static word cpu_stack_pop_16(cpu* cpu)
@@ -209,7 +210,8 @@ static word cpu_stack_pop_16(cpu* cpu)
 
 static byte cpu_stack_pop_8(cpu* cpu)
 {
-	return  read_memory(cpu, STACK_BASE + ++cpu->sp);
+	cpu->sp++;
+	return  read_memory(cpu, STACK_BASE + cpu->sp);
 }
 
 static byte read_memory(cpu* cpu, word address)
@@ -228,18 +230,18 @@ static byte read_memory(cpu* cpu, word address)
 	switch (address)
 	{
 		case PPU_CTRL:
-			return cpu->ppu.registers.ppu_ctrl;
 		case PPU_MASK:
-			return cpu->ppu.registers.ppu_mask;
+		case PPU_SCROLL:
+			// Do nothing. Write-only registers
+			return 0;
+
 		case PPU_STATUS:
-			cpu->ppu.ppu_data_latch = false;
+			cpu->ppu.ppu_latch = false;
 			return cpu->ppu.registers.ppu_status;
 		case OAM_ADDR:
 			return cpu->ppu.registers.oam_addr;
 		case OAM_DATA:
 			return cpu->ppu.registers.oam_data;
-		case PPU_SCROLL:
-			return cpu->ppu.registers.ppu_scroll;
 		case PPU_ADDR:
 			return cpu->ppu.registers.ppu_addr;
 		case PPU_DATA:
@@ -272,8 +274,7 @@ static void write_memory(cpu* cpu, word address, const byte value)
 			cpu->ppu.registers.ppu_mask = value;
 			break;
 		case PPU_STATUS:
-			cpu->ppu.ppu_data_latch = false;
-			cpu->ppu.registers.ppu_status = value;
+			// Do nothing. PPU_STATUS is read-only
 			break;
 		case OAM_ADDR:
 			cpu->ppu.registers.oam_addr = value;
@@ -281,27 +282,42 @@ static void write_memory(cpu* cpu, word address, const byte value)
 		case OAM_DATA:
 			cpu->ppu.registers.oam_data = value;
 			break;
+
 		case PPU_SCROLL:
-			cpu->ppu.registers.ppu_scroll = value;
-			break;
+		{
+			if (cpu->ppu.ppu_latch)
+			{
+				cpu->ppu.registers.ppu_scroll_y = value;
+				cpu->ppu.ppu_latch = false;
+			}
+			else
+			{
+				cpu->ppu.registers.ppu_scroll_x = value;
+				cpu->ppu.ppu_latch = true;
+			}
+		}
+		break;
+
 		case PPU_ADDR:
-			if (cpu->ppu.ppu_data_latch)
+		{
+			if (cpu->ppu.ppu_latch)
 			{
 				cpu->ppu.ppu_data_addr |= (word)value;
-				cpu->ppu.ppu_data_latch = false;
+				cpu->ppu.ppu_latch = false;
 			}
 			else
 			{
 				cpu->ppu.ppu_data_addr = (word)(value << 8);
-				cpu->ppu.ppu_data_latch = true;
+				cpu->ppu.ppu_latch = true;
 			}
-			break;
+			assert(cpu->ppu.ppu_data_addr < VRAM_SIZE);
+		}
+		break;
 
 		case PPU_DATA:
-			if (cpu->ppu.ppu_data_addr <= VRAM_SIZE)
-			{
-				cpu->ppu.memory.data[cpu->ppu.ppu_data_addr++] = value;
-			}
+			assert(cpu->ppu.ppu_data_addr <= VRAM_SIZE - 1);
+			cpu->ppu.memory.data[cpu->ppu.ppu_data_addr] = value;
+			cpu->ppu.ppu_data_addr++;
 			break;
 
 		case OAM_DMA:
@@ -330,10 +346,10 @@ static void lda(cpu* cpu, const address_mode address_mode)
 
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
+
 #ifdef LOGGING
 	printf("LDA %x\n", cpu->a);
 #endif
-
 }
 
 static void ldx(cpu* cpu, const address_mode address_mode)
@@ -360,7 +376,6 @@ static void ldy(cpu* cpu, const address_mode address_mode)
 #endif
 }
 
-
 // Add with Carry
 static void adc(cpu* cpu, const address_mode address_mode)
 {
@@ -373,8 +388,6 @@ static void adc(cpu* cpu, const address_mode address_mode)
 	printf("ADC %x\n", memory);
 #endif
 }
-
-
 
 // Logical AND
 static void AND(cpu* cpu, const address_mode address_mode)
@@ -396,20 +409,27 @@ static void asl(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0x10000000));
+		cpu_set_c_flag(cpu, (cpu->a & 0x10000000 ? 1 : 0));
 		cpu->a <<= 1;
+
+		calc_negative(cpu, cpu->a);
+		calc_zero(cpu, cpu->a);
 #ifdef LOGGING
 		puts("ASL");
 #endif
 	}
 	else {
 		const word address = get_memory_address(cpu, address_mode);
-		cpu_set_c_flag(cpu, (read_memory(cpu, address) & 0x10000000));
 		const byte value = read_memory(cpu, address);
-		write_memory(cpu, address, (byte)(value << 1));
+		cpu_set_c_flag(cpu, (value & 0x10000000 ? 1 : 0));
+		const byte new_value = (byte)(value << 1);
+		write_memory(cpu, address, new_value);
+
+		calc_negative(cpu, new_value);
+		calc_zero(cpu, new_value);
 
 #ifdef LOGGING
-		printf("ASL %x\n", address);
+		printf("ASL %x <%x>\n", address, new_value);
 #endif
 	}
 }
@@ -475,10 +495,11 @@ static void bit(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	const byte result = cpu->a & read_memory(cpu, address);
-	cpu_set_z_flag(cpu, result);
+	const byte memory = read_memory(cpu, address);
+	const byte result = cpu->a & memory;
 
-	cpu->p = read_memory(cpu, address) & 0b11000000;
+	cpu->p = memory & 0b11000000;
+	cpu_set_z_flag(cpu, result);
 
 #ifdef LOGGING
 	printf("BIT %x\n", address);
@@ -536,11 +557,11 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 	else
 	{
 		cpu->pc++;
+#ifdef LOGGING
+		printf("BPL %x\n", cpu->pc);
+#endif
 	}
 
-#ifdef LOGGING
-	printf("BPL %x\n", cpu->pc);
-#endif
 }
 
 // Force Interrupt
@@ -689,12 +710,13 @@ static void dec(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	write_memory(cpu, address, read_memory(cpu, address) - 1);
-	calc_negative(cpu, read_memory(cpu, address));
-	calc_zero(cpu, read_memory(cpu, address));
+	const byte memory = read_memory(cpu, address);
+	const byte new_value = memory - 1;
+	write_memory(cpu, address, new_value);
+	calc_negative(cpu, new_value);
+	calc_zero(cpu, new_value);
 
 #ifdef LOGGING
-
 	printf("DEC %x\n", address);
 #endif
 }
@@ -747,10 +769,11 @@ static void inc(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	write_memory(cpu, address, read_memory(cpu, address) + 1);
 	const byte memory = read_memory(cpu, address);
-	calc_negative(cpu, memory);
-	calc_zero(cpu, memory);
+	const byte new_value = memory + 1;
+	write_memory(cpu, address, new_value);
+	calc_negative(cpu, new_value);
+	calc_zero(cpu, new_value);
 
 #ifdef LOGGING
 	printf("INC %x\n", address);
@@ -790,18 +813,20 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
-	cpu->pc = address;
 
-#ifdef LOGGING
-	puts("JMP");
-#endif
-
-	// TODO: An original 6502 has does not correctly fetch the target address
+	// An original 6502 has a bug where it does not correctly fetch the target address
 	// if the indirect vector falls on a page boundary (e.g. $xxFF where xx is
 	// any value from $00 to $FF). In this case fetches the LSB from $xxFF as
 	// expected but takes the MSB from $xx00. This is fixed in some later chips
 	// like the 65SC02 so for compatibility always ensure the indirect vector is
 	// not at the end of the page.
+	assert(!(address_mode == indirect && (address & 0x00FF) == 0xFF));
+
+	cpu->pc = address;
+
+#ifdef LOGGING
+	puts("JMP");
+#endif
 }
 
 // Jump to Subroutine
@@ -824,7 +849,7 @@ static void lsr(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0b00000001));
+		cpu_set_c_flag(cpu, (cpu->a & 0b00000001) ? 1 : 0);
 		cpu->a >>= 1;
 		calc_negative(cpu, cpu->a);
 		calc_zero(cpu, cpu->a);
@@ -836,17 +861,16 @@ static void lsr(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		byte memory = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (memory & 0b10000000));
+		cpu_set_c_flag(cpu, (memory & 0b00000001) ? 1 : 0);
 		write_memory(cpu, address, memory >> 1);
 		memory = read_memory(cpu, address);
 		calc_negative(cpu, memory);
 		calc_zero(cpu, memory);
 
 #ifdef LOGGING
-		printf("CMP %x\n", address);
+		printf("LSR %x\n", address);
 #endif
 	}
-
 }
 
 // No Operation
@@ -926,11 +950,12 @@ static void plp(cpu* cpu, const address_mode address_mode)
 static void rol(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
+	const bool current_carry_flag = cpu_get_c_flag(cpu);
 	if (address_mode == accumulator)
 	{
 		cpu_set_c_flag(cpu, (cpu->a & 0b10000000) ? 1 : 0);
 		cpu->a <<= 1;
-		cpu->a |= cpu_get_c_flag(cpu) ? 1 : 0;
+		cpu->a |= current_carry_flag ? 1 : 0;
 
 #ifdef LOGGING
 		puts("ROL");
@@ -939,10 +964,9 @@ static void rol(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = read_memory(cpu, address);
-		const bool current_carry_flag = cpu_get_c_flag(cpu);
 		cpu_set_c_flag(cpu, (memory & 0b10000000) ? 1 : 0);
 		byte new_value = (byte)(memory << 1);
-		new_value = new_value | (current_carry_flag ? 1 : 0);
+		new_value |= current_carry_flag ? 1 : 0;
 		write_memory(cpu, address, new_value);
 
 #ifdef LOGGING
@@ -958,7 +982,7 @@ static void ror(cpu* cpu, const address_mode address_mode)
 	const bool current_carry_flag = cpu_get_c_flag(cpu);
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0b00000001));
+		cpu_set_c_flag(cpu, (cpu->a & 0b00000001) ? 1 : 0);
 		cpu->a >>= 1;
 		cpu->a |= current_carry_flag ? 0b10000000 : 0;
 		calc_negative(cpu, cpu->a);
@@ -971,12 +995,12 @@ static void ror(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (memory & 0b10000000));
+		cpu_set_c_flag(cpu, (memory & 0b10000000) ? 1 : 0);
 		byte new_value = memory >> 1;
-		new_value = new_value | (current_carry_flag ? 0b10000000 : 0);
+		new_value |= current_carry_flag ? 0b10000000 : 0;
 		write_memory(cpu, address, new_value);
-		calc_negative(cpu, read_memory(cpu, address));
-		calc_zero(cpu, read_memory(cpu, address));
+		calc_negative(cpu, new_value);
+		calc_zero(cpu, new_value);
 
 #ifdef LOGGING
 		printf("ROR %x\n", address);
@@ -1062,10 +1086,10 @@ static void sta(cpu* cpu, const address_mode address_mode)
 {
 	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
+	printf("STA %x (%x)\n", address, cpu->a);
 	write_memory(cpu, address, cpu->a);
 
 #ifdef LOGGING
-	printf("STA %x\n", address);
 #endif
 }
 
@@ -1410,7 +1434,8 @@ void ppu_clear_memory(ppu* ppu)
 	memset(&ppu->oam.data, 0, OAM_SIZE);
 
 	ppu->ppu_data_addr = 0x00;
-	ppu->ppu_data_latch = false;
+	ppu->ppu_latch = false;
+	ppu->ppu_latch = false;
 }
 
 void ppu_clear_registers(ppu* ppu)
@@ -1422,7 +1447,8 @@ void ppu_clear_registers(ppu* ppu)
 	ppu->registers.ppu_ctrl = 0x00;
 	ppu->registers.ppu_data = 0x00;
 	ppu->registers.ppu_mask = 0x00;
-	ppu->registers.ppu_scroll = 0x00;
+	ppu->registers.ppu_scroll_x = 0x00;
+	ppu->registers.ppu_scroll_y = 0x00;
 	ppu->registers.ppu_status = 0x00;
 }
 

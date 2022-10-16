@@ -77,7 +77,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>c:\source\nes_emulator\nes_emulator;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\SDL2-2.24.0\include;c:\source\nes_emulator\nes_emulator;$(IncludePath)</IncludePath>
     <LibraryPath>c:\source\nes_emulator\nes_emulator\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

@@ -176,40 +176,43 @@ void draw_bg_tile(const ppu* ppu, SDL_Renderer* renderer, int x, int y, const wo
 	}
 }
 
+word get_name_table(const ppu* ppu)
+{
+	switch (ppu->registers.ppu_ctrl & NAME_TABLE_ADDR_FLAGS)
+	{
+		case 0:
+			return NAME_TABLE_0;
+		case 1:
+			return  NAME_TABLE_1;
+		case 2:
+			return NAME_TABLE_2;
+		case 3:
+			return  NAME_TABLE_3;
+		default:
+			assert(false);
+			return 0;
+	}
+}
+
+word get_pattern_table(const ppu* ppu)
+{
+	if (ppu->registers.ppu_ctrl & BG_PT_ADDR_FLAG)
+	{
+		return PATTERN_TABLE_1;
+	}
+	else
+	{
+		return PATTERN_TABLE_0;
+	}
+}
+
 void draw_tiles(const ppu* ppu, SDL_Renderer* renderer)
 {
 	int x = 0;
 	int y = 0;
 
-	word bg_pattern_table_addr;
-	if (ppu->registers.ppu_ctrl & BG_PT_ADDR_FLAG)
-	{
-		bg_pattern_table_addr = PATTERN_TABLE_1;
-	}
-	else
-	{
-		bg_pattern_table_addr = PATTERN_TABLE_0;
-	}
-
-	word name_table_address = 0;
-
-	switch (ppu->registers.ppu_ctrl & NAME_TABLE_ADDR_FLAGS)
-	{
-		case 0:
-			name_table_address = NAME_TABLE_0;
-			break;
-		case 1:
-			name_table_address = NAME_TABLE_1;
-			break;
-		case 2:
-			name_table_address = NAME_TABLE_2;
-			break;
-		case 3:
-			name_table_address = NAME_TABLE_3;
-			break;
-		default:
-			assert(false);
-	}
+	const word bg_pattern_table_addr = get_pattern_table(ppu);
+	const word name_table_address = get_name_table(ppu);
 
 	const word attribute_table_address = name_table_address + 960;
 
@@ -234,13 +237,12 @@ void draw_tiles(const ppu* ppu, SDL_Renderer* renderer)
 	}
 }
 
-void draw_sprite_tile(const ppu* ppu, SDL_Renderer* renderer, word x, word y, byte tile_index, byte attributes)
+void draw_sprite_tile(const ppu* ppu, SDL_Renderer* renderer, word x, word y, word tile_index, byte attributes)
 {
-	const word index = (word)(tile_index << 4);
 	for (word i = 0; i < 8; i++)
 	{
-		const byte tile_hi_byte = ppu->memory.data[index + i];
-		const byte tile_lo_byte = ppu->memory.data[index + i + 8];
+		const byte tile_hi_byte = ppu->memory.data[tile_index + i];
+		const byte tile_lo_byte = ppu->memory.data[tile_index + i + 8];
 
 		draw_sprite_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, attributes);
 		y += PIXEL_HEIGHT;
@@ -249,10 +251,20 @@ void draw_sprite_tile(const ppu* ppu, SDL_Renderer* renderer, word x, word y, by
 
 void draw_sprites(const ppu* ppu, SDL_Renderer* renderer)
 {
+	word sprite_pattern_table_addr;
+	if (ppu->registers.ppu_ctrl & SPRITE_PT_ADDR_FLAG)
+	{
+		sprite_pattern_table_addr = PATTERN_TABLE_1;
+	}
+	else
+	{
+		sprite_pattern_table_addr = PATTERN_TABLE_0;
+	}
+
 	for (int i = 0; i < 32; i += 4)
 	{
 		const byte sprite_y = ppu->oam.data[i];
-		const byte sprite_tile_index = ppu->oam.data[i + 1];
+		const word sprite_tile_index = sprite_pattern_table_addr + (word)(ppu->oam.data[i + 1] << 4);
 		const byte sprite_attributes = ppu->oam.data[i + 2];
 		const byte sprite_x = ppu->oam.data[i + 3];
 

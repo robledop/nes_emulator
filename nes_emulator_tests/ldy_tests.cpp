@@ -30,7 +30,7 @@ namespace nes_emulator_tests
 			// immediate value
 			cpu.memory.data[0x8001] = 0x11;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA0);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -54,7 +54,7 @@ namespace nes_emulator_tests
 			// immediate value
 			cpu.memory.data[0x8001] = -10;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA0);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -78,7 +78,7 @@ namespace nes_emulator_tests
 			// immediate value
 			cpu.memory.data[0x8001] = 0x00;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA0);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -106,7 +106,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x0055] = 0x11;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA4);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -133,7 +133,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x0055] = -10;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA4);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -160,7 +160,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x0055] = 0x00;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xA4);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -188,7 +188,7 @@ namespace nes_emulator_tests
 
 			cpu.memory.data[0x0065] = 0x11;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
@@ -218,7 +218,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x0065] = -10;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
@@ -248,7 +248,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x0065] = 0x00;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
@@ -279,7 +279,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5501] = 0x11;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xAC);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -307,7 +307,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5501] = -10;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xAC);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -335,7 +335,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5501] = 0x00;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 			cpu_exec(&cpu, 0xAC);
 
 			Assert::IsTrue(cpu.sp == 0xFF);
@@ -363,7 +363,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5511] = 0x11;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
@@ -394,7 +394,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5511] = -10;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
@@ -425,7 +425,7 @@ namespace nes_emulator_tests
 			// value
 			cpu.memory.data[0x5511] = 0x00;
 
-			cpu_init(&cpu);
+			cpu_init(&cpu, 0x8000);
 
 			cpu.x = 0x10;
 
