@@ -96,5 +96,7 @@ void cpu_set_v_flag(cpu* cpu, const char val);
 void cpu_set_n_flag(cpu* cpu, const char val);
 
 void cpu_call_nmi(cpu* cpu);
-
-void cpu_init_controller(cpu* cpu, controller* controller);
+word cpu_stack_pop_16(cpu* cpu);
+byte cpu_stack_pop_8(cpu* cpu);
+void cpu_stack_push_16(cpu* cpu, const word val);
+void cpu_stack_push_8(cpu* cpu, const byte val);

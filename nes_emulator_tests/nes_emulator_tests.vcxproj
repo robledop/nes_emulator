@@ -161,8 +161,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="adc_tests.cpp" />
+    <ClCompile Include="and_instruction_tests.cpp" />
     <ClCompile Include="cpu_flags_tests.cpp" />
     <ClCompile Include="cpu_tests.cpp" />
+    <ClCompile Include="jsr_tests.cpp" />
     <ClCompile Include="lda_tests.cpp" />
     <ClCompile Include="ldx_tests.cpp" />
     <ClCompile Include="ldy_tests.cpp" />
@@ -172,6 +174,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="pha_instruction_tests.cpp" />
+    <ClCompile Include="pla_instructions_tests.cpp" />
+    <ClCompile Include="plp_instruction_tests.cpp" />
+    <ClCompile Include="rol_instruction_tests.cpp" />
+    <ClCompile Include="ror_instruction_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -180,9 +187,6 @@
     <ProjectReference Include="..\nes_emulator\nes_emulator.vcxproj">
       <Project>{644aa379-f5e6-4232-a3e1-a0829ec1fc1f}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\Users\Robledo\Downloads\cpu_dummy_reads.nes" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

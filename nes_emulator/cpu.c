@@ -188,27 +188,27 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 	return 0;
 }
 
-static void cpu_stack_push_16(cpu* cpu, const word val)
+void cpu_stack_push_16(cpu* cpu, const word val)
 {
 	write_memory(cpu, STACK_BASE + cpu->sp, (val >> 8) & 0xFF);
 	write_memory(cpu, STACK_BASE + (cpu->sp - 1), val & 0xFF);
 	cpu->sp -= 2;
 }
 
-static void cpu_stack_push_8(cpu* cpu, const byte val)
+void cpu_stack_push_8(cpu* cpu, const byte val)
 {
 	write_memory(cpu, STACK_BASE + cpu->sp, val);
 	cpu->sp--;
 }
 
-static word cpu_stack_pop_16(cpu* cpu)
+word cpu_stack_pop_16(cpu* cpu)
 {
 	const word result = (word)(read_memory(cpu, STACK_BASE + (cpu->sp + 2)) << 8) | (word)read_memory(cpu, STACK_BASE + (cpu->sp + 1));
 	cpu->sp += 2;
 	return result;
 }
 
-static byte cpu_stack_pop_8(cpu* cpu)
+byte cpu_stack_pop_8(cpu* cpu)
 {
 	cpu->sp++;
 	return  read_memory(cpu, STACK_BASE + cpu->sp);
@@ -928,6 +928,8 @@ static void pla(cpu* cpu, const address_mode address_mode)
 	assert(address_mode == implicit);
 	cpu->pc++;
 	cpu->a = cpu_stack_pop_8(cpu);
+	calc_negative(cpu, cpu->a);
+	calc_zero(cpu, cpu->a);
 
 #ifdef LOGGING
 	puts("PLA");
@@ -956,6 +958,8 @@ static void rol(cpu* cpu, const address_mode address_mode)
 		cpu_set_c_flag(cpu, (cpu->a & 0b10000000) ? 1 : 0);
 		cpu->a <<= 1;
 		cpu->a |= current_carry_flag ? 1 : 0;
+		calc_zero(cpu, cpu->a);
+		calc_negative(cpu, cpu->a);
 
 #ifdef LOGGING
 		puts("ROL");
@@ -968,6 +972,8 @@ static void rol(cpu* cpu, const address_mode address_mode)
 		byte new_value = (byte)(memory << 1);
 		new_value |= current_carry_flag ? 1 : 0;
 		write_memory(cpu, address, new_value);
+		calc_zero(cpu, new_value);
+		calc_negative(cpu, new_value);
 
 #ifdef LOGGING
 		printf("ROL %x\n", address);
@@ -995,7 +1001,7 @@ static void ror(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte memory = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (memory & 0b10000000) ? 1 : 0);
+		cpu_set_c_flag(cpu, (memory & 0b00000001) ? 1 : 0);
 		byte new_value = memory >> 1;
 		new_value |= current_carry_flag ? 0b10000000 : 0;
 		write_memory(cpu, address, new_value);
