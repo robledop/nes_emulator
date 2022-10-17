@@ -409,7 +409,7 @@ static void asl(cpu* cpu, const address_mode address_mode)
 	cpu->pc++;
 	if (address_mode == accumulator)
 	{
-		cpu_set_c_flag(cpu, (cpu->a & 0x10000000 ? 1 : 0));
+		cpu_set_c_flag(cpu, ((cpu->a & 0b10000000) ? 1 : 0));
 		cpu->a <<= 1;
 
 		calc_negative(cpu, cpu->a);
@@ -421,7 +421,7 @@ static void asl(cpu* cpu, const address_mode address_mode)
 	else {
 		const word address = get_memory_address(cpu, address_mode);
 		const byte value = read_memory(cpu, address);
-		cpu_set_c_flag(cpu, (value & 0x10000000 ? 1 : 0));
+		cpu_set_c_flag(cpu, (value & 0b10000000 ? 1 : 0));
 		const byte new_value = (byte)(value << 1);
 		write_memory(cpu, address, new_value);
 
