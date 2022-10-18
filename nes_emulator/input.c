@@ -3,7 +3,7 @@
 byte read_next_button(controller* controller)
 {
 	const byte button_value = controller->buttons[controller->current_read++];
-	controller->current_read = controller->current_read % 8;
+	controller->current_read %= 8;
 	return button_value;
 
 }

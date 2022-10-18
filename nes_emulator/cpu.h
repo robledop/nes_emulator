@@ -39,6 +39,7 @@ typedef struct
 typedef struct
 {
 	word nmi_prt;
+	word irq_prt;
 
 	// Accumulator
 	byte a;

@@ -7,9 +7,9 @@
 static byte read_memory(cpu* cpu, const word address);
 static void write_memory(cpu* cpu, const word address, const byte value);
 
-static void calc_carry(cpu* cpu, const word byte)
+static void calc_carry(cpu* cpu, const word value)
 {
-	if (byte & 0xFF00) {
+	if (value & 0xFF00) {
 		cpu_set_c_flag(cpu, 1);
 	}
 	else {
@@ -29,7 +29,7 @@ static void calc_zero(cpu* cpu, const byte byte)
 
 static void calc_negative(cpu* cpu, const byte byte)
 {
-	if (byte & 0b10000000) {
+	if ((byte & 0b10000000) != 0) {
 		cpu_set_n_flag(cpu, 1);
 	}
 	else {
@@ -77,7 +77,7 @@ void cpu_write_memory(cpu* cpu, const word address, const byte value)
 
 static word get_memory_address(cpu* cpu, const address_mode address_mode)
 {
-	switch (address_mode) {  // NOLINT(hicpp-multiway-paths-covered)
+	switch (address_mode) {
 		case implicit:
 			assert(false);
 			break;
@@ -99,14 +99,14 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 		{
 			const byte value = read_memory(cpu, cpu->pc);
 			cpu->pc++;
-			return value + cpu->x;
+			return (value + cpu->x) & 0x00FF;
 		}
 
 		case zero_page_y:
 		{
 			const byte value = read_memory(cpu, cpu->pc);
 			cpu->pc++;
-			return value + cpu->y;
+			return (value + cpu->y) & 0x00FF;
 		}
 
 		case relative:
@@ -165,11 +165,12 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 
 		case indexed_indirect:
 		{
-			const byte vector = read_memory(cpu, cpu->pc) + cpu->x;
+
+			const byte vector = read_memory(cpu, cpu->pc);
 			cpu->pc++;
-			const byte low_byte = read_memory(cpu, vector);
-			const byte high_byte = read_memory(cpu, vector + 1);
-			return  ((word)(high_byte << 8)) | low_byte;
+			const byte low_byte = read_memory(cpu, (vector + cpu->x) & 0xFF);
+			const byte high_byte = read_memory(cpu, (vector + cpu->x + 1) & 0xFF);
+			return ((word)(high_byte << 8)) | low_byte;
 		}
 
 		case indirect_indexed:
@@ -177,11 +178,9 @@ static word get_memory_address(cpu* cpu, const address_mode address_mode)
 			const byte vector = read_memory(cpu, cpu->pc);
 			cpu->pc++;
 			const byte low_byte = read_memory(cpu, vector);
-			const byte high_byte = read_memory(cpu, vector + 1);
+			const byte high_byte = read_memory(cpu, (vector + 1) & 0xFF);
 
-			word address = ((word)(high_byte << 8)) | low_byte;
-			address += cpu->y;
-			return  address;
+			return (((word)(high_byte << 8)) | low_byte) + cpu->y;
 		}
 	}
 
@@ -340,7 +339,6 @@ static void write_memory(cpu* cpu, word address, const byte value)
 
 static void lda(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->a = read_memory(cpu, address);
 
@@ -354,7 +352,6 @@ static void lda(cpu* cpu, const address_mode address_mode)
 
 static void ldx(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->x = read_memory(cpu, address);
 	calc_zero(cpu, cpu->x);
@@ -366,7 +363,6 @@ static void ldx(cpu* cpu, const address_mode address_mode)
 
 static void ldy(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->y = read_memory(cpu, address);
 	calc_zero(cpu, cpu->y);
@@ -379,7 +375,6 @@ static void ldy(cpu* cpu, const address_mode address_mode)
 // Add with Carry
 static void adc(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	calc_add(cpu, memory);
@@ -392,7 +387,6 @@ static void adc(cpu* cpu, const address_mode address_mode)
 // Logical AND
 static void AND(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte value = read_memory(cpu, address);
 	cpu->a &= value;
@@ -406,7 +400,6 @@ static void AND(cpu* cpu, const address_mode address_mode)
 // Arithmetic Shift Left
 static void asl(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (address_mode == accumulator)
 	{
 		cpu_set_c_flag(cpu, ((cpu->a & 0b10000000) ? 1 : 0));
@@ -437,7 +430,6 @@ static void asl(cpu* cpu, const address_mode address_mode)
 // Branch if Carry Clear
 static void bcc(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (!cpu_get_c_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -455,7 +447,6 @@ static void bcc(cpu* cpu, const address_mode address_mode)
 // Branch if Carry Set
 static void bcs(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (cpu_get_c_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -474,7 +465,6 @@ static void bcs(cpu* cpu, const address_mode address_mode)
 // Branch if Equal
 static void beq(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (cpu_get_z_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -493,13 +483,13 @@ static void beq(cpu* cpu, const address_mode address_mode)
 // Bit Test
 static void bit(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	const byte result = cpu->a & memory;
 
-	cpu->p = memory & 0b11000000;
-	cpu_set_z_flag(cpu, result);
+	cpu_set_n_flag(cpu, memory & 0b10000000 ? 1 : 0);
+	cpu_set_v_flag(cpu, memory & 0b01000000 ? 1 : 0);
+	cpu_set_z_flag(cpu, result == 0 ? 1 : 0);
 
 #ifdef LOGGING
 	printf("BIT %x\n", address);
@@ -509,7 +499,6 @@ static void bit(cpu* cpu, const address_mode address_mode)
 // Branch if Minus
 static void bmi(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (cpu_get_n_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -527,7 +516,6 @@ static void bmi(cpu* cpu, const address_mode address_mode)
 // Branch if Not Equal
 static void bne(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (!cpu_get_z_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -545,7 +533,6 @@ static void bne(cpu* cpu, const address_mode address_mode)
 // Branch if Positive
 static void bpl(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (!cpu_get_n_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
@@ -561,7 +548,6 @@ static void bpl(cpu* cpu, const address_mode address_mode)
 		printf("BPL %x\n", cpu->pc);
 #endif
 	}
-
 }
 
 // Force Interrupt
@@ -569,12 +555,12 @@ static void brk(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
 
-	cpu->pc++;
-	cpu_stack_push_16(cpu, cpu->pc);
-	cpu_stack_push_8(cpu, cpu->p | BREAK_FLAG);
+	cpu_stack_push_16(cpu, cpu->pc + 1);
 	cpu_set_b_flag(cpu, 1);
+	cpu_set_i_flag(cpu, 1);
+	cpu_stack_push_8(cpu, cpu->p);
 
-	cpu->pc = read_memory(cpu, 0xFFFE) | (word)(read_memory(cpu, 0xFFFF) << 8);
+	cpu->pc = cpu->irq_prt;
 
 #ifdef LOGGING
 	printf("BRK\n");
@@ -584,11 +570,14 @@ static void brk(cpu* cpu, const address_mode address_mode)
 // Branch if Overflow Clear
 static void bvc(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (!cpu_get_v_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
 		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 #ifdef LOGGING
 	printf("BVC %x\n", cpu->pc);
@@ -598,11 +587,14 @@ static void bvc(cpu* cpu, const address_mode address_mode)
 // Branch if Overflow Set
 static void bvs(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (cpu_get_v_flag(cpu))
 	{
 		const word address = get_memory_address(cpu, address_mode);
 		cpu->pc += (char)address;
+	}
+	else
+	{
+		cpu->pc++;
 	}
 
 #ifdef LOGGING
@@ -614,7 +606,6 @@ static void bvs(cpu* cpu, const address_mode address_mode)
 static void clc(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_c_flag(cpu, 0);
 #ifdef LOGGING
 	puts("CLC");
@@ -625,7 +616,6 @@ static void clc(cpu* cpu, const address_mode address_mode)
 static void cld(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_d_flag(cpu, 0);
 
 #ifdef LOGGING
@@ -637,7 +627,6 @@ static void cld(cpu* cpu, const address_mode address_mode)
 static void cli(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_i_flag(cpu, 0);
 
 #ifdef LOGGING
@@ -649,7 +638,6 @@ static void cli(cpu* cpu, const address_mode address_mode)
 static void clv(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_v_flag(cpu, 0);
 
 #ifdef LOGGING
@@ -660,13 +648,14 @@ static void clv(cpu* cpu, const address_mode address_mode)
 // Compare
 static void cmp(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 
-	cpu_set_c_flag(cpu, cpu->a >= memory ? 1 : 0);
-	cpu_set_z_flag(cpu, cpu->a == memory ? 1 : 0);
-	cpu_set_n_flag(cpu, cpu->a < memory ? 1 : 0);
+	const int result = cpu->a - (int)memory;
+
+	cpu_set_c_flag(cpu, result >= 0 ? 1 : 0);
+	calc_negative(cpu, (byte)result);
+	calc_zero(cpu, (byte)result);
 
 #ifdef LOGGING
 	printf("CMP %x\n", memory);
@@ -676,13 +665,14 @@ static void cmp(cpu* cpu, const address_mode address_mode)
 // Compare X Register
 static void cpx(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 
-	cpu_set_c_flag(cpu, cpu->x >= memory ? 1 : 0);
-	cpu_set_z_flag(cpu, cpu->x == memory ? 1 : 0);
-	cpu_set_n_flag(cpu, cpu->x < memory ? 1 : 0);
+	const int result = cpu->x - (int)memory;
+
+	cpu_set_c_flag(cpu, result >= 0 ? 1 : 0);
+	calc_negative(cpu, (byte)result);
+	calc_zero(cpu, (byte)result);
 
 #ifdef LOGGING
 	printf("CPX %x\n", memory);
@@ -692,13 +682,14 @@ static void cpx(cpu* cpu, const address_mode address_mode)
 // Compare Y Register
 static void cpy(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 
-	cpu_set_c_flag(cpu, cpu->y >= memory ? 1 : 0);
-	cpu_set_z_flag(cpu, cpu->y == memory ? 1 : 0);
-	cpu_set_n_flag(cpu, cpu->y < memory ? 1 : 0);
+	const int result = cpu->y - (int)memory;
+
+	cpu_set_c_flag(cpu, result >= 0 ? 1 : 0);
+	calc_negative(cpu, (byte)result);
+	calc_zero(cpu, (byte)result);
 
 #ifdef LOGGING
 	printf("CPY %x\n", memory);
@@ -708,7 +699,6 @@ static void cpy(cpu* cpu, const address_mode address_mode)
 // Decrement Memory
 static void dec(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	const byte new_value = memory - 1;
@@ -725,7 +715,6 @@ static void dec(cpu* cpu, const address_mode address_mode)
 static void dex(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->x -= 1;
 	calc_negative(cpu, cpu->x);
 	calc_zero(cpu, cpu->x);
@@ -739,7 +728,6 @@ static void dex(cpu* cpu, const address_mode address_mode)
 static void dey(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->y -= 1;
 	calc_negative(cpu, cpu->y);
 	calc_zero(cpu, cpu->y);
@@ -752,7 +740,6 @@ static void dey(cpu* cpu, const address_mode address_mode)
 // Exclusive OR
 static void eor(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	cpu->a ^= memory;
@@ -767,7 +754,6 @@ static void eor(cpu* cpu, const address_mode address_mode)
 // Increment Memory
 static void inc(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	const byte new_value = memory + 1;
@@ -784,7 +770,6 @@ static void inc(cpu* cpu, const address_mode address_mode)
 static void inx(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->x += 1;
 	calc_negative(cpu, cpu->x);
 	calc_zero(cpu, cpu->x);
@@ -798,7 +783,6 @@ static void inx(cpu* cpu, const address_mode address_mode)
 static void iny(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->y += 1;
 	calc_negative(cpu, cpu->y);
 	calc_zero(cpu, cpu->y);
@@ -811,7 +795,6 @@ static void iny(cpu* cpu, const address_mode address_mode)
 // Jump
 static void jmp(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 
 	// An original 6502 has a bug where it does not correctly fetch the target address
@@ -820,7 +803,7 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 	// expected but takes the MSB from $xx00. This is fixed in some later chips
 	// like the 65SC02 so for compatibility always ensure the indirect vector is
 	// not at the end of the page.
-	assert(!(address_mode == indirect && (address & 0x00FF) == 0xFF));
+	assert(!(address_mode == indirect && (address & 0x00FF) == 0x00FF));
 
 	cpu->pc = address;
 
@@ -833,8 +816,7 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 static void jsr(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == absolute);
-	cpu->pc++;
-	cpu_stack_push_16(cpu, cpu->pc + 2);
+	cpu_stack_push_16(cpu, cpu->pc + 1);
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->pc = address;
 
@@ -846,7 +828,6 @@ static void jsr(cpu* cpu, const address_mode address_mode)
 // Logical Shift Right
 static void lsr(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	if (address_mode == accumulator)
 	{
 		cpu_set_c_flag(cpu, (cpu->a & 0b00000001) ? 1 : 0);
@@ -877,7 +858,6 @@ static void lsr(cpu* cpu, const address_mode address_mode)
 static void nop(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 
 #ifdef LOGGING
 	puts("NOP");
@@ -887,7 +867,6 @@ static void nop(cpu* cpu, const address_mode address_mode)
 // Logical Inclusive OR
 static void ora(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	cpu->a |= read_memory(cpu, address);
 	calc_negative(cpu, cpu->a);
@@ -902,7 +881,6 @@ static void ora(cpu* cpu, const address_mode address_mode)
 static void pha(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_stack_push_8(cpu, cpu->a);
 
 #ifdef LOGGING
@@ -914,7 +892,6 @@ static void pha(cpu* cpu, const address_mode address_mode)
 static void php(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_stack_push_8(cpu, cpu->p | UNUSED_FLAG | B_FLAG);
 
 #ifdef LOGGING
@@ -926,7 +903,6 @@ static void php(cpu* cpu, const address_mode address_mode)
 static void pla(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->a = cpu_stack_pop_8(cpu);
 	calc_negative(cpu, cpu->a);
 	calc_zero(cpu, cpu->a);
@@ -940,7 +916,6 @@ static void pla(cpu* cpu, const address_mode address_mode)
 static void plp(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->p = cpu_stack_pop_8(cpu);
 
 #ifdef LOGGING
@@ -951,7 +926,6 @@ static void plp(cpu* cpu, const address_mode address_mode)
 // Rotate Left
 static void rol(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const bool current_carry_flag = cpu_get_c_flag(cpu);
 	if (address_mode == accumulator)
 	{
@@ -984,7 +958,6 @@ static void rol(cpu* cpu, const address_mode address_mode)
 //  Rotate Right
 static void ror(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const bool current_carry_flag = cpu_get_c_flag(cpu);
 	if (address_mode == accumulator)
 	{
@@ -1031,7 +1004,7 @@ static void rts(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
 	const word value = cpu_stack_pop_16(cpu);
-	cpu->pc = value;
+	cpu->pc = value + 1;
 
 #ifdef LOGGING
 	puts("RTS");
@@ -1041,7 +1014,6 @@ static void rts(cpu* cpu, const address_mode address_mode)
 // Subtract with Carry
 static void sbc(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	const byte memory = read_memory(cpu, address);
 	calc_add(cpu, ~memory);
@@ -1055,7 +1027,6 @@ static void sbc(cpu* cpu, const address_mode address_mode)
 static void sec(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_c_flag(cpu, 1);
 
 #ifdef LOGGING
@@ -1067,7 +1038,6 @@ static void sec(cpu* cpu, const address_mode address_mode)
 static void sed(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_d_flag(cpu, 1);
 
 #ifdef LOGGING
@@ -1079,7 +1049,6 @@ static void sed(cpu* cpu, const address_mode address_mode)
 static void sei(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu_set_i_flag(cpu, 1);
 
 #ifdef LOGGING
@@ -1090,19 +1059,17 @@ static void sei(cpu* cpu, const address_mode address_mode)
 // Store Accumulator
 static void sta(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
+#ifdef LOGGING
 	printf("STA %x (%x)\n", address, cpu->a);
+#endif
 	write_memory(cpu, address, cpu->a);
 
-#ifdef LOGGING
-#endif
 }
 
 // Store X Register
 static void stx(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	write_memory(cpu, address, cpu->x);
 
@@ -1114,7 +1081,6 @@ static void stx(cpu* cpu, const address_mode address_mode)
 // Store Y Register
 static void sty(cpu* cpu, const address_mode address_mode)
 {
-	cpu->pc++;
 	const word address = get_memory_address(cpu, address_mode);
 	write_memory(cpu, address, cpu->y);
 
@@ -1127,7 +1093,6 @@ static void sty(cpu* cpu, const address_mode address_mode)
 static void tax(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->x = cpu->a;
 	calc_zero(cpu, cpu->x);
 	calc_negative(cpu, cpu->x);
@@ -1141,7 +1106,6 @@ static void tax(cpu* cpu, const address_mode address_mode)
 static void tay(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->y = cpu->a;
 	calc_zero(cpu, cpu->y);
 	calc_negative(cpu, cpu->y);
@@ -1155,13 +1119,11 @@ static void tay(cpu* cpu, const address_mode address_mode)
 static void tsx(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->x = cpu->sp;
 	calc_zero(cpu, cpu->x);
 	calc_negative(cpu, cpu->x);
 
 #ifdef LOGGING
-
 	puts("TSX");
 #endif
 }
@@ -1170,7 +1132,6 @@ static void tsx(cpu* cpu, const address_mode address_mode)
 static void txa(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->a = cpu->x;
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
@@ -1185,7 +1146,6 @@ static void txa(cpu* cpu, const address_mode address_mode)
 static void txs(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->sp = cpu->x;
 
 #ifdef LOGGING
@@ -1198,7 +1158,6 @@ static void txs(cpu* cpu, const address_mode address_mode)
 static void tya(cpu* cpu, const address_mode address_mode)
 {
 	assert(address_mode == implicit);
-	cpu->pc++;
 	cpu->a = cpu->y;
 	calc_zero(cpu, cpu->a);
 	calc_negative(cpu, cpu->a);
@@ -1469,6 +1428,8 @@ void cpu_init(cpu* cpu, const word prg_size)
 	cpu->pc = ((word)(read_memory(cpu, 0x8000 + prg_size - 3) << 8)) | read_memory(cpu, 0x8000 + prg_size - 4);
 
 	cpu->nmi_prt = ((word)(read_memory(cpu, 0x8000 + prg_size - 5) << 8)) | read_memory(cpu, 0x8000 + prg_size - 6);
+
+	cpu->irq_prt = ((word)(read_memory(cpu, 0x8000 + prg_size - 1) << 8)) | read_memory(cpu, 0x8000 + prg_size - 2);
 
 	ppu_clear_memory(&cpu->ppu);
 	ppu_clear_registers(&cpu->ppu);

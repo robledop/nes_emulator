@@ -15,7 +15,9 @@ typedef enum address_mode
 	absolute_x,
 	absolute_y,
 	indirect,
+	// (Indirect,X)
 	indexed_indirect,
+	// (Indirect),Y
 	indirect_indexed
 } address_mode;
 

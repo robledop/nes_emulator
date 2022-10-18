@@ -180,6 +180,10 @@
     <ClCompile Include="plp_instruction_tests.cpp" />
     <ClCompile Include="rol_instruction_tests.cpp" />
     <ClCompile Include="ror_instruction_tests.cpp" />
+    <ClCompile Include="sbc_instructions_tests.cpp" />
+    <ClCompile Include="sec_instruction_tests.cpp" />
+    <ClCompile Include="sed_instruction_tests.cpp" />
+    <ClCompile Include="sei_instruction_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

@@ -146,21 +146,20 @@ int main(const int argc, char** argv)
 			handle_input(&nes.controller, &event);
 		}
 
+		cpu_exec(&nes.cpu, nes.cpu.memory.data[nes.cpu.pc++]);
 
-		cpu_exec(&nes.cpu, nes.cpu.memory.data[nes.cpu.pc]);
-
-		if (x == 1000)
+		if (x == 2000)
 		{
 			render_background(&nes.cpu.ppu, renderer);
 			render_sprites(&nes.cpu.ppu, renderer);
 		}
 
-		if (x >= 300)
+		if (x >= 600)
 		{
 			nes.cpu.ppu.registers.ppu_status ^= (0 ^ nes.cpu.ppu.registers.ppu_status) & 0b10000000;
 		}
 
-		if (x == 1001)
+		if (x == 2001)
 		{
 			nes.cpu.ppu.registers.ppu_status |= 0b10000000;
 			if (nes.cpu.ppu.registers.ppu_ctrl & 0b10000000)
