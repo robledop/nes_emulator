@@ -261,7 +261,7 @@ void draw_sprites(const ppu* ppu, SDL_Renderer* renderer)
 		sprite_pattern_table_addr = PATTERN_TABLE_0;
 	}
 
-	for (int i = 0; i < 32; i += 4)
+	for (int i = 0; i < 256; i += 4)
 	{
 		const byte sprite_y = ppu->oam.data[i];
 		const word sprite_tile_index = sprite_pattern_table_addr + (word)(ppu->oam.data[i + 1] << 4);
