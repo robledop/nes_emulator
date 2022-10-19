@@ -29,15 +29,6 @@ void init_controller(controller* controller)
 
 void handle_input(controller* controller, const SDL_Event* event)
 {
-	//if (controller->buttons[3])
-	//{
-	//	controller->buttons[3] = 0;
-	//}
-	//else
-	//{
-	//	controller->buttons[3] = 1;
-	//}
-	
 	if (event->type == SDL_KEYDOWN)
 	{
 		switch (event->key.keysym.sym) {

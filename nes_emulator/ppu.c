@@ -275,7 +275,6 @@ void draw_sprites(const ppu* ppu, SDL_Renderer* renderer)
 void render_background(const ppu* ppu, SDL_Renderer* renderer)
 {
 	draw_tiles(ppu, renderer);
-
 }
 
 void render_sprites(const ppu* ppu, SDL_Renderer* renderer)

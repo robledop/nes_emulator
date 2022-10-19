@@ -118,9 +118,6 @@ int main(const int argc, char** argv)
 	cpu_init(&nes.cpu, prg_size);
 	memcpy(nes.cpu.ppu.memory.data, &rom[prg_size + 0x10], chr_size);
 
-	//nes.cpu.ppu.registers.ppu_status = 0xf0; // FOR TESTING
-	//cpu.pc = 0xc000; // FOR NESTEST
-
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* window = SDL_CreateWindow(
 		EMULATOR_WINDOW_TITLE,
