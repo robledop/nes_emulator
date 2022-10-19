@@ -316,7 +316,14 @@ static void write_memory(cpu* cpu, word address, const byte value)
 		case PPU_DATA:
 			assert(cpu->ppu.ppu_data_addr <= VRAM_SIZE - 1);
 			cpu->ppu.memory.data[cpu->ppu.ppu_data_addr] = value;
-			cpu->ppu.ppu_data_addr++;
+			if (cpu->ppu.registers.ppu_ctrl & 0b00000100)
+			{
+				cpu->ppu.ppu_data_addr += 32;
+			}
+			else
+			{
+				cpu->ppu.ppu_data_addr += 1;
+			}
 			break;
 
 		case OAM_DMA:

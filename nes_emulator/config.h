@@ -38,4 +38,4 @@ typedef enum address_mode
 #define EMULATOR_WINDOW_TITLE "NES Emulator"
 
 
-#define LOGGING
+//#define LOGGING
