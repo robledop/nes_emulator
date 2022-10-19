@@ -1,7 +1,7 @@
 #pragma once
 
 typedef unsigned char byte;
-typedef  unsigned short word;
+typedef unsigned short word;
 typedef enum address_mode
 {
 	implicit,
@@ -36,6 +36,5 @@ typedef enum address_mode
 #define CONTROLLER_2	0x4017
 
 #define EMULATOR_WINDOW_TITLE "NES Emulator"
-
 
 //#define LOGGING

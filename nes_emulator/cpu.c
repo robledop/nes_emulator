@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "memory.h"
 
-
 static byte read_memory(cpu* cpu, const word address);
 static void write_memory(cpu* cpu, const word address, const byte value);
 
@@ -215,17 +214,6 @@ byte cpu_stack_pop_8(cpu* cpu)
 
 static byte read_memory(cpu* cpu, word address)
 {
-	// handle memory mirroring
-	while (address >= 0x2008 && address < 0x4000)
-	{
-		address -= 8;
-	}
-
-	while (address >= 0x0800 && address < 0x2000)
-	{
-		address -= 0x0800;
-	}
-
 	switch (address)
 	{
 		case PPU_CTRL:
@@ -254,16 +242,6 @@ static byte read_memory(cpu* cpu, word address)
 
 static void write_memory(cpu* cpu, word address, const byte value)
 {
-	// handle memory mirroring
-	while (address >= 0x2008 && address < 0x4000)
-	{
-		address -= 8;
-	}
-	while (address >= 0x0800 && address < 0x2000)
-	{
-		address -= 0x0800;
-	}
-
 	switch (address)
 	{
 		case PPU_CTRL:
@@ -810,7 +788,8 @@ static void jmp(cpu* cpu, const address_mode address_mode)
 	// expected but takes the MSB from $xx00. This is fixed in some later chips
 	// like the 65SC02 so for compatibility always ensure the indirect vector is
 	// not at the end of the page.
-	assert(!(address_mode == indirect && (address & 0x00FF) == 0x00FF));
+
+	//assert(!(address_mode == indirect && (address & 0x00FF) == 0x00FF));
 
 	cpu->pc = address;
 

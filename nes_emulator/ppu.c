@@ -239,13 +239,29 @@ void draw_tiles(const ppu* ppu, SDL_Renderer* renderer)
 
 void draw_sprite_tile(const ppu* ppu, SDL_Renderer* renderer, word x, word y, word tile_index, byte attributes)
 {
-	for (word i = 0; i < 8; i++)
-	{
-		const byte tile_hi_byte = ppu->memory.data[tile_index + i];
-		const byte tile_lo_byte = ppu->memory.data[tile_index + i + 8];
+	const bool flip_vertically = attributes & 0b10000000;
 
-		draw_sprite_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, attributes);
-		y += PIXEL_HEIGHT;
+	if(flip_vertically)
+	{
+		for (int i = 7; i > -1; i--)
+		{
+			const byte tile_hi_byte = ppu->memory.data[tile_index + i];
+			const byte tile_lo_byte = ppu->memory.data[tile_index + i + 8];
+
+			draw_sprite_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, attributes);
+			y += PIXEL_HEIGHT;
+		}
+	}
+	else
+	{
+		for (word i = 0; i < 8; i++)
+		{
+			const byte tile_hi_byte = ppu->memory.data[tile_index + i];
+			const byte tile_lo_byte = ppu->memory.data[tile_index + i + 8];
+
+			draw_sprite_tile_row(ppu, renderer, tile_lo_byte, tile_hi_byte, x, y, attributes);
+			y += PIXEL_HEIGHT;
+		}
 	}
 }
 

@@ -145,18 +145,18 @@ int main(const int argc, char** argv)
 
 		cpu_exec(&nes.cpu, nes.cpu.memory.data[nes.cpu.pc++]);
 
-		if (x == 2000)
+		if (x == 4000)
 		{
 			render_background(&nes.cpu.ppu, renderer);
 			render_sprites(&nes.cpu.ppu, renderer);
 		}
 
-		if (x >= 600)
+		if (x >= 1200)
 		{
 			nes.cpu.ppu.registers.ppu_status ^= (0 ^ nes.cpu.ppu.registers.ppu_status) & 0b10000000;
 		}
 
-		if (x == 2001)
+		if (x == 4001)
 		{
 			nes.cpu.ppu.registers.ppu_status |= 0b10000000;
 			if (nes.cpu.ppu.registers.ppu_ctrl & 0b10000000)
